@@ -72,12 +72,8 @@
 ## Carga a GIT:
     # Subir todo a git...
 	task-management-app> git init
-	git remote -v
-	git remote set-url origin https://github.com/enid-faundezc/task-management-app.git
-	
-	git remote set-url origin https://github.com/enid-faundezc/task-management-app.git
-
-	desde: ProcTransacc/
+	desde: task-management-app/
+	- crear el .gitignore..
 	git init
 	git status
 	git add .
