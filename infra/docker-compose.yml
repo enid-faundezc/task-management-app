@@ -1,0 +1,28 @@
+services:
+# EFC: Configuración de PostgreSQL para la base de datos de tareas
+  postgres:
+    image: postgres:16
+    container_name: postgres-task-db
+    restart: always
+    environment:
+      POSTGRES_DB: taskdb  # EFC: Se crea inmediato la BD, para no hacerlo a mano posteriormente.
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# EFC: Configuración de Keycloak para la gestión de autenticación y autorización
+  keycloak:
+      image: quay.io/keycloak/keycloak:26.2
+      container_name: keycloak-task
+      command: start-dev --http-port=9090 # EFC: Se cambia el puerto por defecto a 9090 para evitar conflictos con otros servicios.
+      environment:
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+      ports:
+        - "9090:9090"
+
+volumes:
+  postgres_data:
