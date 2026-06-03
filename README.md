@@ -1,7 +1,7 @@
 # Gestor de Tareas:
 
 ## Respaldo en GIT: 
-1.- Desde task-management-app/, crear el .gitignore y posteriormente:
+1.- Inicializar GIT desde task-management-app/, crear el .gitignore y posteriormente:
 
 ```bash
 # Terminal Shell
@@ -15,7 +15,7 @@ git branch -M main
 git push -u origin main
 ```
 	
-2.- A medida de subir cambios de avances:
+2.- Subir respaldo de avances:
 ```bash
 # Terminal Shell
 git status
@@ -23,12 +23,14 @@ git add .
 git commit -m "Respaldo avance"
 git push origin main
 ```
-## Levantar la aplicación y realizar pruebas.
-1.- En directorio base "task-management-app" con términal, levantar docker previamente:
+## Pasos para levantar la APP y realizar pruebas.
+1.- Levantar docker.
+2.- Ir al directorio base "task-management-app".
+3.- Con Terminal levantar infra:
 ```bash
 # Terminal Shell
 cd infra
 docker compose up -d
 docker ps # Revisar servicios.
 ```
-2.- Posteriormente, ejecutar los pasos que están definidos en el archivo creacion-ambiente-keycloak.md
+4.- Crear ambiente Keycloak, ir al archivo "creacion-ambiente-keycloak.md"
