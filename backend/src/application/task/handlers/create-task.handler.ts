@@ -25,15 +25,15 @@ export class CreateTaskHandler {
     );
 
     await this.taskRepository.save(task);
+
     // EFC: Podríamos usar un mapper para convertir la entidad a DTO,
     // pero dado que es un caso simple, lo hacemos manualmente aquí.
     // Lo dejaré pendiente.
-    const response = new CreateTaskResponseDto();
-    response.id = task.id;
-    response.title = task.title;
-    response.status = task.status;
-    response.createdAt = task.createdAt;
-
-    return response;
+    return {
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      createdAt: task.createdAt,
+    };
   }
 }

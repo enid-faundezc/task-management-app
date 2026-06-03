@@ -15,8 +15,8 @@ enum TaskStatus {
   CREATED
   ASSIGNED
   IN_PROGRESS
-  COMPLETED
   STOPPED
+  COMPLETED
 }
 
 enum TaskPriority {
@@ -26,15 +26,44 @@ enum TaskPriority {
   CRITICAL
 }
 
+enum TaskHistoryEventType {
+  CREATED
+  ASSIGNED
+  REASSIGNED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  COMMENT_ADDED
+}
+
 model Task {
-  id String @id @default(uuid())
+  id String @id
   title String @db.VarChar(200)
   description String @db.VarChar(500)
-  priority TaskPriority @default(MEDIUM)
+  priority TaskPriority
+  status TaskStatus
   observations String?
-  status TaskStatus @default(CREATED)
   dueDate DateTime?
   assignedUserId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime
+  updatedAt DateTime
+  histories TaskHistory[]
+  @@index([status])
+  @@index([priority])
+  @@index([assignedUserId])
+  @@index([createdAt])
+}
+
+model TaskHistory {
+  id String @id
+  taskId String
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  eventType TaskHistoryEventType
+  previousValue String?
+  newValue String?
+  comment String?
+  userId String?
+  createdAt DateTime
+  @@index([taskId])
+  @@index([eventType])
+  @@index([createdAt])
 }
