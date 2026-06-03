@@ -5,14 +5,16 @@ import { Task } from '../entities/task.entity';
 import { TaskPriority } from '../enums/task-priority.enum';
 import { TaskStatus } from '../enums/task-status.enum';
 import { InvalidTaskCreationException } from '../exceptions/invalid-task-creation.exception';
+import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
 
 // EFC: La clase TaskFactory es responsable de crear instancias de Task
 // con las validaciones necesarias.
-
+@Injectable()
 export class TaskFactory {
   create(
     title: string,
     description: string,
+    createdByUserId: string, // EFC: El ID del usuario que crea la tarea, para registrar en el historial.
     priority?: TaskPriority,
     observations?: string | null,
     dueDate?: Date | null,
@@ -32,6 +34,7 @@ export class TaskFactory {
       description.trim(),
       priority ?? TaskPriority.MEDIUM,
       assignedUserId ? TaskStatus.ASSIGNED : TaskStatus.CREATED,
+      createdByUserId,
       observations ?? null,
       dueDate ?? null,
       assignedUserId ?? null,

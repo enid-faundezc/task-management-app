@@ -39,8 +39,10 @@ docker ps # Revisar servicios.
 5. Compilar el modelo de datos, desde "task-management-app\backend>":
 ```bash
 # Terminal Shell
-npx prisma generate # Generar Prisma
-npx prisma migrate dev --name init # Primera migración
+npx prisma migrate reset  #Eliminar toda la BD y reconstruir
+Remove-Item -Recurse -Force prisma\migrations  #Eliminar toda la BD y reconstruir
+npx prisma migrate dev --name init #Elimina la carpeta migrations
+npx prisma generate  #Luego crea una migración nueva
 ```
 6. Revisar la BD: 
 ```bash
@@ -51,3 +53,11 @@ docker exec -it postgres-task-db psql -U taskuser -d taskdb
 \d "Task" # Muestra la estructura, columnas y relaciones de una tabla específica.
 SELECT * FROM "Task"; #  Consulta los registros de la tabla Task (usa comillas dobles si Prisma respetó las mayúsculas).
 ```
+
+7. Levantar backend (en task-management-app\backend\)
+```bash
+# Terminal Shell
+npm run start:dev 
+```  
+
+8. Verificar swagger: http://localhost:3000/api/docs

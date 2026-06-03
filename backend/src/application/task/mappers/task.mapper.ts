@@ -10,6 +10,7 @@ export class TaskMapper {
       priority: task.priority,
       status: task.status,
       assignedUserId: task.assignedUserId,
+      createdByUserId: task.createdByUserId,
       dueDate: task.dueDate,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,

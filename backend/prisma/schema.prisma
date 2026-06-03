@@ -41,11 +41,12 @@ model Task {
   description String @db.VarChar(500)
   priority TaskPriority
   status TaskStatus
+  createdByUserId String
   observations String?
   dueDate DateTime?
   assignedUserId String?
-  createdAt DateTime
-  updatedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   histories TaskHistory[]
   @@index([status])
   @@index([priority])
@@ -62,7 +63,7 @@ model TaskHistory {
   newValue String?
   comment String?
   userId String?
-  createdAt DateTime
+  createdAt DateTime @default(now())
   @@index([taskId])
   @@index([eventType])
   @@index([createdAt])

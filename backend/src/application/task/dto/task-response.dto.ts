@@ -11,6 +11,8 @@ export class TaskResponseDto {
 
   assignedUserId?: string | null;
 
+  createdByUserId!: string;
+
   dueDate?: Date | null;
 
   createdAt!: Date;

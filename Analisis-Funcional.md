@@ -411,7 +411,9 @@ Se tienen las siguientes lineamientos técnicos considerados:
 	│ - description                 │
 	│ - priority                    │
 	│ - status                      │
+	│ - createdByUserId             │
 	│ - assignedUserId              │
+	│ - observations                │
 	│                               │
 	│ Behaviors                     │
 	│                               │
@@ -443,10 +445,11 @@ Se tienen las siguientes lineamientos técnicos considerados:
 	│ status                │
 	│ observations          │
 	│ due_date              │
+	│ createdByUserId       │
 	│ assigned_user_id      │
 	│ created_at            │
 	│ updated_at            │
-	└──────────┬────────────┘
+	└───────┬───────────────┘
 			│ 1
 			│
 			│

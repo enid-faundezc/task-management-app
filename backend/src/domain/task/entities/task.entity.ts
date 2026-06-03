@@ -15,12 +15,19 @@ import { InvalidTaskStateException } from '../exceptions/invalid-task-state.exce
 export class Task {
   private readonly history: TaskHistory[];
 
+  // EFC: Error y solución: Este Array es para almacenar eventos pendientes de persistencia
+  // esto porque al ser los eventos parte del agregado, al actualizar se procesan
+  // todos nuevamente, por ende se necesita una forma de diferenciar los eventos
+  // que ya se han persistido en la BD de los nuevos eventos generados por las operaciones del agregado.
+  private pendingHistory: TaskHistory[] = [];
+
   constructor(
     public readonly id: string,
     public title: string,
     public description: string,
     public priority: TaskPriority,
     public status: TaskStatus,
+    public readonly createdByUserId: string,
     public observations: string | null,
     public dueDate: Date | null,
     public assignedUserId: string | null,
@@ -28,12 +35,26 @@ export class Task {
     public updatedAt: Date,
     history?: TaskHistory[],
   ) {
+    // EFC: Corrección de error, se inicializa el historial con un array vacío si no se proporciona,
+    // de lo contrario viene de la BD
     this.history = history ?? [];
+
+    this.pendingHistory = []; // EFC: Parte vacía.
   }
 
   // EFC: Obtener el historial de eventos de la tarea
   getHistory(): ReadonlyArray<TaskHistory> {
     return this.history;
+  }
+
+  // EFC: Método para obtener solo los eventos pendientes de persistencia
+  getPendingHistory(): ReadonlyArray<TaskHistory> {
+    return this.pendingHistory;
+  }
+
+  // EFC: Método para limpiar los eventos pendientes después de que se hayan persistido
+  clearPendingHistory(): void {
+    this.pendingHistory = [];
   }
 
   // EFC: Método interno para registrar eventos
@@ -44,18 +65,19 @@ export class Task {
     comment: string | null,
     userId: string | null,
   ): void {
-    this.history.push(
-      new TaskHistory(
-        randomUUID(),
-        this.id,
-        eventType,
-        previousValue,
-        newValue,
-        comment,
-        userId,
-        new Date(),
-      ),
+    const history = new TaskHistory(
+      randomUUID(),
+      this.id,
+      eventType,
+      previousValue,
+      newValue,
+      comment,
+      userId,
+      new Date(),
     );
+
+    this.history.push(history);
+    this.pendingHistory.push(history); // EFC: Se agrega a pendientes para persistir luego.
   }
 
   // EFC: método para asignar la tarea a un usuario, si ya tiene es

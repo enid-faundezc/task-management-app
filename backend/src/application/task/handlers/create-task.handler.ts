@@ -18,6 +18,7 @@ export class CreateTaskHandler {
     const task = this.taskFactory.create(
       dto.title,
       dto.description,
+      dto.createdByUserId, // EFC: Pasamos el userId al factory para registrar en el historial.
       dto.priority,
       dto.observations,
       dto.dueDate ? new Date(dto.dueDate) : undefined,

@@ -19,4 +19,6 @@ export abstract class TaskRepository {
   abstract findById(id: string): Promise<Task | null>;
 
   abstract findAll(filters: TaskFilters): Promise<PaginatedResult<Task>>;
+
+  abstract findOrFail(id: string): Promise<Task>;
 }

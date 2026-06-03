@@ -1,0 +1,285 @@
+{
+  "info": {
+    "_postman_id": "2acc4254-cf90-47fc-8608-48fa1aa33756",
+    "name": "TestBackend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "24510277"
+  },
+  "item": [
+    {
+      "name": "Create Task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"Implementar integración Keycloak\",\r\n  \"description\": \"Implementar autenticación OIDC utilizando Keycloak y validación JWT.\",\r\n  \"priority\": \"MEDIUM\",\r\n  \"observations\": \"Pendiente validación con arquitectura.\",\r\n  \"dueDate\": \"2026-12-31T23:59:59Z\",\r\n  \"assignedUserId\": \"3f50c8f8-b4e5-44b2-a4c4-c4d58d7a1234\",\r\n  \"createdByUserId\": \"3f50c8f8-b4e5-44b2-a4c4-c4d58d7a1234\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/tasks",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Task",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks?page=1&size=10",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get task by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/8845a45a-cc5d-4405-83e9-25c641628281",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "8845a45a-cc5d-4405-83e9-25c641628281"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get task history",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/8845a45a-cc5d-4405-83e9-25c641628281/history",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "8845a45a-cc5d-4405-83e9-25c641628281",
+            "history"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Assing task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"3f50c8f8-b4e5-44b2-a4c4-c4d58d7a1234\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/tasks/53bb1eea-f061-4c3f-9a6b-0755448c8c3f/assign",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "53bb1eea-f061-4c3f-9a6b-0755448c8c3f",
+            "assign"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Start task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/7cd3f136-ede0-4c0e-b149-0014df913cc0/start",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "7cd3f136-ede0-4c0e-b149-0014df913cc0",
+            "start"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Stop task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/7cd3f136-ede0-4c0e-b149-0014df913cc0/stop",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "7cd3f136-ede0-4c0e-b149-0014df913cc0",
+            "stop"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Resume task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/7cd3f136-ede0-4c0e-b149-0014df913cc0/resume",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "7cd3f136-ede0-4c0e-b149-0014df913cc0",
+            "resume"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Complete task",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/tasks/7cd3f136-ede0-4c0e-b149-0014df913cc0/complete",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "7cd3f136-ede0-4c0e-b149-0014df913cc0",
+            "complete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Change priority",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"priority\": \"HIGH\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/tasks/8845a45a-cc5d-4405-83e9-25c641628281/priority",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "8845a45a-cc5d-4405-83e9-25c641628281",
+            "priority"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add comment",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"comment\": \"prueba\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/tasks/8845a45a-cc5d-4405-83e9-25c641628281/comments",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "tasks",
+            "8845a45a-cc5d-4405-83e9-25c641628281",
+            "comments"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

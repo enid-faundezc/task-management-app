@@ -5,6 +5,7 @@ import {
   IsDateString,
   MinLength,
   IsEnum,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority } from '../../../domain/task/enums/task-priority.enum';
@@ -17,6 +18,7 @@ import { TaskPriority } from '../../../domain/task/enums/task-priority.enum';
 // y no debe ser proporcionado por el cliente de la API.
 
 export class CreateTaskDto {
+  // EFC: El título es obligatorio
   @ApiProperty({
     example: 'Implementar integración Keycloak',
     minLength: 5,
@@ -28,6 +30,7 @@ export class CreateTaskDto {
   @MaxLength(200)
   title!: string;
 
+  // EFC: La descripción es obligatoria
   @ApiProperty({
     example:
       'Implementar autenticación OIDC utilizando Keycloak y validación JWT.',
@@ -40,6 +43,7 @@ export class CreateTaskDto {
   @MaxLength(500)
   description!: string;
 
+  // EFC: La prioridad es opcional, si no se proporciona se asignará MEDIUM por defecto en el dominio.
   @ApiPropertyOptional({
     enum: TaskPriority,
     example: TaskPriority.MEDIUM,
@@ -49,6 +53,7 @@ export class CreateTaskDto {
   @IsEnum(TaskPriority)
   priority?: TaskPriority;
 
+  // EFC: Las observaciones son opcionales
   @ApiPropertyOptional({
     example: 'Pendiente validación con arquitectura.',
     maxLength: 1000,
@@ -59,6 +64,7 @@ export class CreateTaskDto {
   @MaxLength(1000)
   observations?: string;
 
+  // EFC: La fecha de entrega es opcional, si se proporciona debe ser una fecha válida en formato ISO 8601.
   @ApiPropertyOptional({
     example: '2026-12-31T23:59:59Z',
     description: 'Fecha comprometida de entrega',
@@ -67,6 +73,7 @@ export class CreateTaskDto {
   @IsDateString()
   dueDate?: string;
 
+  // EFC: El ID del usuario asignado es opcional, si se proporciona debe ser una cadena de texto.
   @ApiPropertyOptional({
     example: '3f50c8f8-b4e5-44b2-a4c4-c4d58d7a1234',
     description: 'Identificador del usuario asignado',
@@ -74,4 +81,9 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   assignedUserId?: string;
+
+  // EFC: El ID del usuario que crea la tarea es obligatorio, se necesita para registrar el evento de creación en el historial.
+  @ApiProperty()
+  @IsUUID()
+  createdByUserId!: string;
 }
