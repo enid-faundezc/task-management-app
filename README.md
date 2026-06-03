@@ -1,9 +1,11 @@
-## Gestor de Tareas
+# Gestor de Tareas:
 
-## Carga a GIT:
-    # Subir todo a git...
+## Interacción GIT:
+Subir todo a git:
+
 	task-management-app> git init
 	desde: task-management-app/
+
 	- crear el .gitignore..
 	git init
 	git status
@@ -13,19 +15,21 @@
 	git branch -M main
 	git push -u origin main
 	
-    # A medida de subir cambios de avances:
+A medida de subir cambios de avances:
+
 	git status
 	git add .
 	git commit -m "Respaldo avance"
 	git push origin main
 
 ## Levantar la aplicación y realizar pruebas.
-    ## En directorio base "task-management-app" con términal, levantar docker previamente:
+En directorio base "task-management-app" con términal, levantar docker previamente:
+
     cd infra
     docker compose up -d
     docker ps # Revisar servicios.
 
-    ## Configurar keyCloack (Ejecutar todo en terminal), previamente revisar si carga bien: http://localhost:9090
+Configurar keyCloack (Ejecutar todo en terminal), previamente revisar si carga bien: http://localhost:9090: 
  
 	# 1. Obtener el token limpiamente en una variable
 	$token = (Invoke-RestMethod -Uri "http://localhost:9090/realms/master/protocol/openid-connect/token" -Method Post -Body @{username="admin"; password="admin"; grant_type="password"; client_id="admin-cli"}).access_token
