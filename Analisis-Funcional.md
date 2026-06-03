@@ -1,8 +1,8 @@
 # Historia de Usuario: Gestión Integral de Tareas:
 
-Como usuario autenticado del sistema, quiero crear, asignar, ejecutar y monitorear tareas, para organizar el trabajo y dar seguimiento a las actividades del equipo.
+1. Como usuario autenticado del sistema, quiero crear, asignar, ejecutar y monitorear tareas, para organizar el trabajo y dar seguimiento a las actividades del equipo.
 
-Objetivo del Producto: Construir una aplicación web que permita administrar tareas de trabajo similares a Jira, con: Gestión del ciclo de vida de las tareas, asignación de responsables, priorización, historial de cambios, Auditoría, Autenticación y autorización mediante Keycloak y API documentada mediante OpenAPI/Swagger.
+2. Objetivo del Producto: Construir una aplicación web que permita administrar tareas de trabajo similares a Jira, con: Gestión del ciclo de vida de las tareas, asignación de responsables, priorización, historial de cambios, Auditoría, Autenticación y autorización mediante Keycloak y API documentada mediante OpenAPI/Swagger.
 
 ## Actores
 	(1) Usuario, puede:

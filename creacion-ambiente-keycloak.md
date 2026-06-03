@@ -1,6 +1,7 @@
-## Configurar keyCloack 
-1.- Verificar que esté OK Keycloak: http://localhost:9090, si está OK seguir al paso 2.
-2.- Correr todo este script en terminal: Este script creará todo el ambiente requerido en Keycloak (realm, client, roles, usuarios):
+## Configurar keyCloack
+
+1. Verificar que esté OK Keycloak: http://localhost:9090, si está OK seguir al paso 2.
+2. Correr todo este script en terminal: Este script creará todo el ambiente requerido en Keycloak (realm, client, roles, usuarios):
 
 ```bash
 # Terminal Shell
