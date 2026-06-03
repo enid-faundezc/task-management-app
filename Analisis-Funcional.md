@@ -1,6 +1,6 @@
--	## Historia de Usuario:
-	================================================================================================
-	# Gestión Integral de Tareas:
+-	# Historia de Usuario:
+
+	## Gestión Integral de Tareas:
 	- Como usuario autenticado del sistema,
 	- Quiero crear, asignar, ejecutar y monitorear tareas,
 	-Para organizar el trabajo y dar seguimiento a las actividades del equipo.
