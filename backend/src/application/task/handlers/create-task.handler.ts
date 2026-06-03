@@ -1,35 +1,39 @@
-import { randomUUID } from 'crypto';
 import { Injectable } from '@nestjs/common';
 
 import { CreateTaskCommand } from '../commands/create-task.command';
-
-import { Task } from '../../../domain/task/entities/task.entity';
-import { TaskStatus } from '../../../domain/task/enums/task-status.enum';
+import { TaskFactory } from '../../../domain/task/factories/task.factory';
 import { TaskRepository } from '../../../domain/task/repositories/task.repository';
-
-import { TaskPriority } from '../../../domain/task/enums/task-priority.enum';
+import { CreateTaskResponseDto } from '../dto/create-task-response.dto';
 
 @Injectable()
 export class CreateTaskHandler {
-  constructor(private readonly repository: TaskRepository) {}
+  constructor(
+    private readonly taskFactory: TaskFactory,
+    private readonly taskRepository: TaskRepository,
+  ) {}
 
-  async execute(command: CreateTaskCommand): Promise<Task> {
+  async execute(command: CreateTaskCommand): Promise<CreateTaskResponseDto> {
     const dto = command.dto;
-    const now = new Date();
 
-    const task = new Task(
-      randomUUID(),
+    const task = this.taskFactory.create(
       dto.title,
       dto.description,
-      dto.priority ?? TaskPriority.MEDIUM,
-      dto.observations ?? null,
-      TaskStatus.CREATED,
-      dto.dueDate ? new Date(dto.dueDate) : null,
-      dto.assignedUserId ?? null,
-      now,
-      now,
+      dto.priority,
+      dto.observations,
+      dto.dueDate ? new Date(dto.dueDate) : undefined,
+      dto.assignedUserId,
     );
 
-    return await this.repository.save(task);
+    await this.taskRepository.save(task);
+    // EFC: Podríamos usar un mapper para convertir la entidad a DTO,
+    // pero dado que es un caso simple, lo hacemos manualmente aquí.
+    // Lo dejaré pendiente.
+    const response = new CreateTaskResponseDto();
+    response.id = task.id;
+    response.title = task.title;
+    response.status = task.status;
+    response.createdAt = task.createdAt;
+
+    return response;
   }
 }

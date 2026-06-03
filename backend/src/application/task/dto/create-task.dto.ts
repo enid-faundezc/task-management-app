@@ -9,6 +9,13 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority } from '../../../domain/task/enums/task-priority.enum';
 
+// EFC: Esta clase define el DTO para la creación de tareas.
+// Incluye validaciones y documentación para cada campo, asegurando
+// que los datos recibidos sean correctos y estén bien documentados en la API.
+// El campo 'status' no se incluye aquí porque es una regla de negocio
+// que se maneja internamente en el caso de uso de creación de tareas,
+// y no debe ser proporcionado por el cliente de la API.
+
 export class CreateTaskDto {
   @ApiProperty({
     example: 'Implementar integración Keycloak',
@@ -68,7 +75,3 @@ export class CreateTaskDto {
   @IsString()
   assignedUserId?: string;
 }
-
-// EFC Nota: acá no va status porque esa es regla de negocio del caso de uso crear tarea,
-// no es algo que el cliente de la API deba enviar. El status se asignará automáticamente
-// a CREATED en el handler.
