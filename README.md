@@ -6,7 +6,7 @@
 
 ```bash
 # Terminal Shell
-task-management-app> git init
+task-management-app> 
 git init
 git status
 git add .
@@ -36,3 +36,18 @@ docker compose up -d
 docker ps # Revisar servicios.
 ```
 4. Crear ambiente Keycloak, ir al archivo "creacion-ambiente-keycloak.md"
+5. Compilar el modelo de datos, desde "task-management-app\backend>":
+```bash
+# Terminal Shell
+npx prisma generate # Generar Prisma
+npx prisma migrate dev --name init # Primera migración
+```
+6. Revisar la BD: 
+```bash
+# Terminal Shell
+docker exec -it postgres-task-db psql -U taskuser -d taskdb 
+\dt # Lista todas las tablas creadas por Prisma.
+\dT # Lista todos los enum
+\d "Task" # Muestra la estructura, columnas y relaciones de una tabla específica.
+SELECT * FROM "Task"; #  Consulta los registros de la tabla Task (usa comillas dobles si Prisma respetó las mayúsculas).
+```

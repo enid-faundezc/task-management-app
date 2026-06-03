@@ -432,6 +432,38 @@ Se tienen las siguientes lineamientos técnicos considerados:
 	-modifica la entidad
 	-genera un evento de historial
 
+## Modelo Relacional:
+	┌───────────────────────┐
+	│ TASK                  │
+	├───────────────────────┤
+	│ id PK                 │
+	│ title                 │
+	│ description           │
+	│ priority              │
+	│ status                │
+	│ observations          │
+	│ due_date              │
+	│ assigned_user_id      │
+	│ created_at            │
+	│ updated_at            │
+	└──────────┬────────────┘
+			│ 1
+			│
+			│
+			│ N
+	┌──────────▼────────────┐
+	│ TASK_HISTORY          │
+	├───────────────────────┤
+	│ id PK                 │
+	│ task_id FK            │
+	│ event_type            │
+	│ previous_value        │
+	│ new_value             │
+	│ comment               │
+	│ user_id               │
+	│ created_at            │
+	└───────────────────────┘
+
 # Infraestructura:
 ## Ingeniería de la infra:
 	Persistencia: BD Postgres.
