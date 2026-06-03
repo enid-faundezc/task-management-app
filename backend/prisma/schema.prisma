@@ -19,10 +19,18 @@ enum TaskStatus {
   STOPPED
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model Task {
   id String @id @default(uuid())
   title String @db.VarChar(200)
-  description String?
+  description String @db.VarChar(500)
+  priority TaskPriority @default(MEDIUM)
   observations String?
   status TaskStatus @default(CREATED)
   dueDate DateTime?

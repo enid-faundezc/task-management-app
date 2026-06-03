@@ -1,11 +1,13 @@
 import { TaskStatus } from '../enums/task-status.enum';
+import { TaskPriority } from '../enums/task-priority.enum';
 
 export class Task {
   constructor(
     public readonly id: string,
     public title: string,
-    public description: string | null,
+    public description: string,
     public observations: string | null,
+    public priority: TaskPriority,
     public status: TaskStatus,
     public dueDate: Date | null,
     public assignedUserId: string | null,
