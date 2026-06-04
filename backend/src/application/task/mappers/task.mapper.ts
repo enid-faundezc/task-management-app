@@ -11,6 +11,7 @@ export class TaskMapper {
       status: task.status,
       assignedUserId: task.assignedUserId,
       createdByUserId: task.createdByUserId,
+      observations: task.observations,
       dueDate: task.dueDate,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,

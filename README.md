@@ -72,4 +72,5 @@ npm run dev
 
 11. Usuarios:
     Usuario Rol Usuario: user1user  Password123!
+    Usuario Rol Usuario: user2user  Password123!
     Usuario Rol Admin:   user1admin Password123!

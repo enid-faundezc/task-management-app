@@ -50,6 +50,7 @@ export const assignTask = async (id: string, userId: string): Promise<void> => {
 
 // POST /tasks/{id}/start -> TaskController_start (RF-06)
 export const startTask = async (id: string): Promise<void> => {
+  // 🌟 Corregido: Se inyecta el ID dentro de la ruta para calzar con /tasks/{id}/start
   await http.post(`/tasks/${id}/start`);
 };
 

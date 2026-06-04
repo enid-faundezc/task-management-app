@@ -66,8 +66,16 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles"
     -ContentType "application/json" `
     -Body $bodyRol   
 
-# 5. Crear un usuario rol user
+# 5. Crear un usuario rol user 1 y 2
 $bodyUsuario = @{ username = "user1user"; enabled = $true } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyUsuario
+
+$bodyUsuario = @{ username = "user2user"; enabled = $true } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users" `
     -Method Post `
@@ -82,6 +90,12 @@ $usuarioResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/Ta
 
 $userId = $usuarioResponse[0].id
 
+$usuarioResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users?username=user2user" `
+    -Method Get `
+    -Headers @{ Authorization = "Bearer $token" }
+
+$userId2 = $usuarioResponse[0].id
+
 # 7. Definir la contraseña del usuario
 $bodyPassword = @{ 
     type = "password" 
@@ -90,6 +104,19 @@ $bodyPassword = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId/reset-password" `
+    -Method Put `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyPassword
+
+
+$bodyPassword = @{ 
+    type = "password" 
+    value = "Password123!" 
+    temporary = $false 
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId2/reset-password" `
     -Method Put `
     -Headers @{ Authorization = "Bearer $token" } `
     -ContentType "application/json" `
@@ -113,6 +140,12 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/
     -Headers @{ Authorization = "Bearer $token" } `
     -ContentType "application/json" `
     -Body $bodyMapping
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId2/role-mappings/realm" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyMapping
     
 # 11. Actualizar el perfil del usuario con datos obligatorios mínimos
 $bodyProfileUser = @{
@@ -125,6 +158,16 @@ $bodyProfileUser = @{
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId" ` -Method Put ` -Headers @{ Authorization = "Bearer $token" } ` -ContentType "application/json" ` -Body $bodyProfileUser
 
+$bodyProfileUser = @{
+    firstName       = "Usuario2"
+    lastName        = "Prueba2"
+    email           = "user2user@example.com"
+    emailVerified   = $true
+    requiredActions = @()  # Forzar lista de acciones pendientes vacía
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId2" ` -Method Put ` -Headers @{ Authorization = "Bearer $token" } ` -ContentType "application/json" ` -Body $bodyProfileUser
+
 # 12. Login y Obtención dinámica del JWT del usuario final (user1user)
 $loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManagement/protocol/openid-connect/token" `
     -Method Post `
@@ -135,9 +178,22 @@ $loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManage
         client_id   = "task-frontend" 
     }
 
+$loginResponse2 = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManagement/protocol/openid-connect/token" `
+    -Method Post `
+    -Body @{ 
+        username    = "user2user"
+        password    = "Password123!"
+        grant_type  = "password"
+        client_id   = "task-frontend" 
+    }
+
 # 13. Extraer el token de acceso obtenido
 $userToken = $loginResponse.access_token
 Write-Host "Token de usuario rol user: $userToken"
+
+# 13. Extraer el token de acceso obtenido
+$userToken2 = $loginResponse2.access_token
+Write-Host "Token de usuario rol user: $userToken2"
 
 # 14. Crear un usuario rol userAdmin
 $bodyUsuario = @{ username = "user1admin"; enabled = $true } | ConvertTo-Json

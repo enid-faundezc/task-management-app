@@ -13,6 +13,8 @@ export class TaskResponseDto {
 
   createdByUserId!: string;
 
+  observations?: string | null;
+
   dueDate?: Date | null;
 
   createdAt!: Date;

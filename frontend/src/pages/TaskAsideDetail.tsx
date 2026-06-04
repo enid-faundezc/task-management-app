@@ -126,7 +126,13 @@ export const TaskAsideDetail = ({ id, onClose }: AsideProps) => {
 
               <div>
                 <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Observaciones</label>
-                <input type="text" value={editForm.observations} onChange={(e) => setEditForm(p => ({ ...p, observations: e.target.value }))} style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+                <input 
+                    type="text" 
+                    value={editForm.observations} 
+                    onChange={(e) => setEditForm(p => ({ ...p, observations: e.target.value }))} 
+                    placeholder="Notas o alcances técnicos..." 
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
+                    />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
