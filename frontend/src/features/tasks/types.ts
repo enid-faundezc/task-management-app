@@ -2,6 +2,7 @@
 export type TaskStatus = 'CREATED' | 'ASSIGNED' | 'IN_PROGRESS' | 'STOPPED' | 'COMPLETED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type HistoryEventType = 'CREATED' | 'ASSIGNED' | 'REASSIGNED' | 'STATUS_CHANGED' | 'PRIORITY_CHANGED' | 'COMMENT_ADDED';
+export type TaskHistoryEventType =  'CREATED' | 'ASSIGNED' | 'REASSIGNED' | 'STATUS_CHANGED' | 'PRIORITY_CHANGED' | 'COMMENT_ADDED' | 'FIELD_CHANGED';
 
 export interface User {
   id: string;
@@ -66,4 +67,21 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   size: number;
+}
+
+// EFC: para ver el historial
+export interface HistoryItem {
+  id: string;
+  eventType: TaskHistoryEventType;
+  previousValue: string | null;
+  newValue: string | null;
+  comment: string | null;
+  userId: string | null;
+  createdAt: string;
+}
+
+export interface HistoryResponse {
+  success: boolean;
+  message: string;
+  data: HistoryItem[];
 }

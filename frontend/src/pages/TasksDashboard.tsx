@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/auth.store';
-import { useTasks, useTaskDetail, useTaskActions, useKeycloakUsers } from '../features/tasks/hooks';
+//EFC: Se llama al hook para llamar al endpoint
+import { useTasks, useTaskDetail, useTaskActions, useKeycloakUsers, useTaskHistory  } from '../features/tasks/hooks'; 
 import { type TaskFilters, type TaskPriority } from '../features/tasks/types';
 import * as rules from '../features/tasks/rules';
+import { formatGlobalDate } from '../utils/date'; // EFC: Para formatear fechas 
+
+// EFC:  Diccionario Global para traducir estados a textos amables (RF-02, RF-04)
+const STATUS_LABELS: Record<string, string> = {
+  CREATED: 'Creado',
+  ASSIGNED: 'Asignado',
+  IN_PROGRESS: 'En progreso', // 🚀 Texto amable solicitado
+  STOPPED: 'Detenido',
+  COMPLETED: 'Completado'
+};
 
 export const TasksDashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -17,13 +28,14 @@ export const TasksDashboard = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
- const [editForm, setEditForm] = useState<{
+  const [editForm, setEditForm] = useState<{
     title: string;
     description: string;
     dueDate: string;
     observations: string;
-    status?: string; // 👈 Permitimos el estado opcional para control de solo lectura
+    status?: string; // EFC Permitimos el estado opcional para control de solo lectura
   }>({ title: '', description: '', dueDate: '', observations: '', status: '' });
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
 
   const [form, setForm] = useState(() => {
     const hoy = new Date();
@@ -35,6 +47,10 @@ export const TasksDashboard = () => {
 
   const { data, isLoading, isError } = useTasks(filters);
   const { data: taskDetail } = useTaskDetail(selectedTaskId);
+
+  const { data: historyData, isPending: isHistoryLoading } = useTaskHistory(
+    isHistoryOpen ? selectedTaskId : null
+  );
 
   // 🌟 Variable de control: Bloquea los cambios si está COMPLETED y el operador es un USER
   
@@ -147,7 +163,7 @@ export const TasksDashboard = () => {
       {/* BARRA SUPERIOR */}
       <header style={{ background: '#1e293b', color: 'white', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.4rem' }}>Task Manager Enterprise</h1>
+          <h1 style={{ margin: 0, fontSize: '1.4rem' }}>Administrador de Tareas</h1>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Usuario: <strong>{user.name}</strong> ({user.role}) | ID: {user.id}</p>
         </div>
         <button onClick={logout} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Salir</button>
@@ -157,20 +173,22 @@ export const TasksDashboard = () => {
       <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <section>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ margin: 0 }}>Listado Operativo</h2>
+            <h2 style={{ margin: 0 }}>Listado de Tareas</h2>
             <button onClick={() => setIsCreateOpen(true)} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>+ Crear</button>
           </div>
 
           {/* Barra Filtros rápidos (RF-03) */}
           <div style={{ display: 'flex', gap: '1rem', background: 'white', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <input placeholder="Buscar por título..." value={filters.search} onChange={(e) => handleFilterChange('search', e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', flex: 1 }} />
-            <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+            
+            <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white' }}>
               <option value="">Cualquier Estado</option>
-              <option value="CREATED">CREATED</option>
-              <option value="ASSIGNED">ASSIGNED</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="STOPPED">STOPPED</option>
-              <option value="COMPLETED">COMPLETED</option>
+              {/* 🌟 Mantenemos el value oficial en mayúsculas pero usamos etiquetas amables en español */}
+              <option value="CREATED">Creado</option>
+              <option value="ASSIGNED">Asignado</option>
+              <option value="IN_PROGRESS">En progreso</option>
+              <option value="STOPPED">Detenido</option>
+              <option value="COMPLETED">Completado</option>
             </select>
           </div>
 
@@ -199,12 +217,21 @@ export const TasksDashboard = () => {
                     >
                       <td style={{ padding: '1rem', fontWeight: '500' }}>{task.title}</td>
                       <td style={{ padding: '1rem' }}>
-                        <span style={{ padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', background: task.status === 'COMPLETED' ? '#dcfce7' : '#f1f5f9', color: task.status === 'COMPLETED' ? '#15803d' : '#475569' }}>
-                          {task.status}
+                        <span style={{ 
+                          padding: '0.2rem 0.5rem', 
+                          borderRadius: '12px', 
+                          fontSize: '0.75rem', 
+                          fontWeight: 'bold', 
+                          // 🎨 Colores dinámicos: Verde para Completado, Azul para En progreso, Gris para el resto
+                          background: task.status === 'COMPLETED' ? '#dcfce7' : task.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9', 
+                          color: task.status === 'COMPLETED' ? '#15803d' : task.status === 'IN_PROGRESS' ? '#1d4ed8' : '#475569' 
+                        }}>
+                          {/* 🌟 Muestra el texto amable traducido (ej: "En progreso", "Creado") */}
+                          {STATUS_LABELS[task.status] || task.status}
                         </span>
                       </td>
                       <td style={{ padding: '1rem' }}>{task.priority}</td>
-                      <td style={{ padding: '1rem', color: '#64748b' }}>{new Date(task.createdAt).toLocaleDateString()}</td>
+                      <td style={{ padding: '1rem', color: '#64748b' }}>{formatGlobalDate(task.createdAt)}</td>
                       
                       {/* 🌟 INYECCIÓN DE BOTONES EXCLUSIVOS DE ADMINISTRADOR */}
                       <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
@@ -225,7 +252,8 @@ export const TasksDashboard = () => {
                         >
                           ✏️
                         </button>
-
+                        
+                        {/* ⏳ BOTÓN DE asignar: Solo visible si el ROL es ADMIN */}
                         {user.role === 'ADMIN' && rules.canAssign(task, user) && (
                           <button 
                             title="Asignar Responsable"
@@ -237,6 +265,22 @@ export const TasksDashboard = () => {
                             style={{ padding: '0.3rem 0.6rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                           >
                             👤
+                          </button>
+                        )}
+
+                        {/* ⏳ BOTÓN DE HISTORIAL: Solo visible si el ROL es ADMIN */}
+                        {user.role === 'ADMIN' && (
+                          <button 
+                            title="Ver Historial de Cambios"
+                            onClick={() => {
+                              // 1. Guardamos el ID de la tarea seleccionada (gatilla el hook useTaskHistory)
+                              setSelectedTaskId(task.id);
+                              // 2. Abrimos el modal visualmente
+                              setIsHistoryOpen(true);
+                            }}
+                            style={{ padding: '0.3rem 0.6rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            ⏳
                           </button>
                         )}
                       </td>
@@ -278,14 +322,17 @@ export const TasksDashboard = () => {
                     fontSize: '0.75rem', 
                     fontWeight: 'bold', 
                     letterSpacing: '0.05em',
-                    background: ((taskDetail as any).data?.status || (taskDetail as any).status) === 'COMPLETED' ? '#dcfce7' : 
-                                ((taskDetail as any).data?.status || (taskDetail as any).status) === 'IN_PROGRESS' ? '#dbeafe' : 
-                                ((taskDetail as any).data?.status || (taskDetail as any).status) === 'STOPPED' ? '#fef3c7' : '#f1f5f9', 
-                    color: ((taskDetail as any).data?.status || (taskDetail as any).status) === 'COMPLETED' ? '#15803d' : 
-                           ((taskDetail as any).data?.status || (taskDetail as any).status) === 'IN_PROGRESS' ? '#1d4ed8' : 
-                           ((taskDetail as any).data?.status || (taskDetail as any).status) === 'STOPPED' ? '#d97706' : '#475569' 
+                    // 🎨 Colores de fondo dinámicos homologados con la tabla
+                    background: (editForm.status || (taskDetail as any)?.data?.status) === 'COMPLETED' ? '#dcfce7' : 
+                                (editForm.status || (taskDetail as any)?.data?.status) === 'IN_PROGRESS' ? '#dbeafe' : 
+                                (editForm.status || (taskDetail as any)?.data?.status) === 'STOPPED' ? '#fef3c7' : '#f1f5f9', 
+                    // 🎨 Colores de texto dinámicos homologados con la tabla
+                    color: (editForm.status || (taskDetail as any)?.data?.status) === 'COMPLETED' ? '#15803d' : 
+                           (editForm.status || (taskDetail as any)?.data?.status) === 'IN_PROGRESS' ? '#1d4ed8' : 
+                           (editForm.status || (taskDetail as any)?.data?.status) === 'STOPPED' ? '#d97706' : '#475569' 
                   }}>
-                    {((taskDetail as any).data?.status || (taskDetail as any).status) || 'CARGANDO...'}
+                    {/* 🌟 Muestra el texto amable en español (ej: "En progreso") buscando en tu diccionario global */}
+                    {STATUS_LABELS[editForm.status || ''] || STATUS_LABELS[(taskDetail as any)?.data?.status || ''] || 'Cargando...'}
                   </span>
                 )}
 
@@ -545,6 +592,126 @@ export const TasksDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* 🌟 MODAL DE HISTORIAL DE CAMBIOS (Consumiendo TanStack Query en Tabla con Scroll) */}
+      {isHistoryOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '8px', width: '100%', maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            
+            {/* Cabecera del Modal Fija */}
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>⏳ Historial de Cambios y Auditoría</h3>
+              <button 
+                onClick={() => setIsHistoryOpen(false)} 
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido / Cuerpo con Contenedor de Scroll Vertical */}
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: '#f8fafc' }}>
+              {isHistoryLoading ? (
+                <div style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>Cargando historial...</div>
+              ) : !historyData || historyData.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>No existen registros de cambios para esta tarea.</div>
+              ) : (
+                /* 🌟 Contenedor de la Tabla con Scroll Vertical Fijo */
+                <div style={{ maxHeight: '380px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#ffffff' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                        <th style={{ padding: '0.75rem' }}>Evento</th>
+                        <th style={{ padding: '0.75rem' }}>Detalle de Modificación</th>
+                        <th style={{ padding: '0.75rem' }}>Fecha Registro</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyData.map((item) => (
+                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          
+                          {/* Columna Evento con Badge */}
+                          <td style={{ padding: '0.75rem' }}>
+                            <span style={{ 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              padding: '0.2rem 0.4rem', 
+                              borderRadius: '4px',
+                              background: 
+                                item.eventType === 'CREATED' ? '#dcfce7' : 
+                                ['ASSIGNED', 'REASSIGNED'].includes(item.eventType) ? '#dbeafe' : 
+                                ['STATUS_CHANGED', 'PRIORITY_CHANGED'].includes(item.eventType) ? '#f3e8ff' :
+                                item.eventType === 'COMMENT_ADDED' ? '#e0f2fe' : '#fef3c7',
+                              color: 
+                                item.eventType === 'CREATED' ? '#15803d' : 
+                                ['ASSIGNED', 'REASSIGNED'].includes(item.eventType) ? '#1d4ed8' : 
+                                ['STATUS_CHANGED', 'PRIORITY_CHANGED'].includes(item.eventType) ? '#6b21a8' :
+                                item.eventType === 'COMMENT_ADDED' ? '#0369a1' : '#b45309'
+                            }}>
+                              {item.eventType}
+                            </span>
+                          </td>
+
+                          {/* Columna Detalle Lógico Dinámico */}
+                          <td style={{ padding: '0.75rem', color: '#334155' }}>
+                            {item.eventType === 'FIELD_CHANGED' && (
+                              <span>
+                                Modificó <strong>{item.comment}</strong>: 
+                                <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginLeft: '4px' }}>"{item.previousValue || 'null'}"</span> 
+                                ➡️ <span style={{ color: '#16a34a', fontWeight: '500' }}>"{item.newValue}"</span>
+                              </span>
+                            )}
+                            {item.eventType === 'STATUS_CHANGED' && (
+                              <span>
+                                Estado: <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>{item.previousValue}</span> ➡️ <strong style={{ color: '#16a34a' }}>{item.newValue}</strong>
+                              </span>
+                            )}
+                            {item.eventType === 'PRIORITY_CHANGED' && (
+                              <span>
+                                Prioridad: <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>{item.previousValue}</span> ➡️ <strong style={{ color: '#b45309' }}>{item.newValue}</strong>
+                              </span>
+                            )}
+                            {item.eventType === 'COMMENT_ADDED' && (
+                              <span>💬 Nota: <em style={{ color: '#475569' }}>"{item.newValue}"</em></span>
+                            )}
+                            {['ASSIGNED', 'REASSIGNED'].includes(item.eventType) && (
+                              <span>
+                                {item.eventType === 'ASSIGNED' ? '👤 Responsable:' : '🔄 Reasig. a:'}{' '}
+                                <code style={{ background: '#f1f5f9', padding: '0.1rem 0.3rem', borderRadius: '3px', fontSize: '0.75rem', color: '#0f172a' }}>{item.newValue}</code>
+                              </span>
+                            )}
+                            {item.eventType === 'CREATED' && (
+                              <span style={{ color: '#475569' }}>✨ Creación inicial del registro operativo.</span>
+                            )}
+                          </td>
+
+                           {/* Columna Fecha con Formato Corporativo AM/PM */}
+                          <td style={{ padding: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                            {formatGlobalDate(item.createdAt)}
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Pie del Modal / Botón de Salida Fijo */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', textAlign: 'right', background: '#f1f5f9' }}>
+              <button 
+                onClick={() => setIsHistoryOpen(false)} 
+                style={{ padding: '0.45rem 1.2rem', background: '#64748b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+              >
+                Cerrar Auditoría
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 };

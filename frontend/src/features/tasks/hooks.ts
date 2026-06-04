@@ -20,6 +20,16 @@ export const useTaskDetail = (id: string | null) => {
   });
 };
 
+// Hook para obtener el historial de cambios de una tarea específica con TanStack Query
+export const useTaskHistory = (id: string | null) => {
+  return useQuery({
+    queryKey: ['taskHistory', id],
+    queryFn: () => api.getTaskHistory(id!),
+    enabled: !!id, // Evita ejecutar la consulta si el ID es nulo
+    staleTime: 0,  // Forzamos a que traiga datos frescos cada vez que se consulte el historial
+  });
+};
+
 // Hook centralizado de mutaciones y acciones de negocio
 export const useTaskActions = () => {
   const queryClient = useQueryClient();

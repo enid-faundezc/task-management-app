@@ -7,7 +7,9 @@ import axios from 'axios';
 import { 
   type Task, 
   type TaskFilters, 
-  type PaginatedResponse 
+  type PaginatedResponse, 
+  type HistoryResponse,
+  type HistoryItem
 } from './types';
 
 export interface KeycloakUser {
@@ -86,6 +88,13 @@ export const changeTaskPriority = async (id: string, priority: string): Promise<
 export const addTaskComment = async (id: string, comment: string): Promise<void> => {
   // Envía el body con la propiedad "comment" exigida por AddTaskCommentDto
   await http.post(`/tasks/${id}/comments`, { comment });
+};
+
+// GET /tasks/{id}/history -> TaskController_getHistory
+export const getTaskHistory = async (id: string): Promise<HistoryItem[]> => {
+  // Cambiamos 'any[]' por 'HistoryItem[]' dentro del tipado genérico de http.get
+  const { data } = await http.get<HistoryResponse>(`/tasks/${id}/history`);
+  return data.data;
 };
 
 // PATCH /tasks/{id} -> TaskController_update
