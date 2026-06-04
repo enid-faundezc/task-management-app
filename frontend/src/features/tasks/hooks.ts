@@ -1,8 +1,3 @@
-// EFC: Los Hooks de Estado del Servidor: utilizaremos TanStack Query para 
-// gestionar el ciclo de vida de los datos, la memoria caché y la sincronización 
-// automática de la interfaz. Cuando ejecutes cualquier mutación con éxito, este archivo 
-// invalidará los datos viejos para forzar un 
-// refresco inmediato en la pantalla sin recargar el navegador.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './api';
 import { type TaskFilters } from './types';
@@ -12,7 +7,7 @@ export const useTasks = (filters: TaskFilters) => {
   return useQuery({
     queryKey: ['tasks', filters],
     queryFn: () => api.getTasks(filters),
-    placeholderData: (previousData) => previousData, // Evita parpadeos en cambios de página
+    placeholderData: (previousData) => previousData,
   });
 };
 
@@ -29,7 +24,6 @@ export const useTaskDetail = (id: string | null) => {
 export const useTaskActions = () => {
   const queryClient = useQueryClient();
 
-  // Callback centralizado de éxito para refrescar la caché local de tareas (RNF-03)
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
     queryClient.invalidateQueries({ queryKey: ['task'] });
@@ -43,6 +37,12 @@ export const useTaskActions = () => {
   const completeMut = useMutation({ mutationFn: api.completeTask, onSuccess: invalidateQueries });
   const priorityMut = useMutation({ mutationFn: ({ id, priority }: { id: string; priority: string }) => api.changeTaskPriority(id, priority), onSuccess: invalidateQueries });
   const commentMut = useMutation({ mutationFn: ({ id, comment }: { id: string; comment: string }) => api.addTaskComment(id, comment), onSuccess: invalidateQueries });
+  
+  // 🌟 NUEVA MUTACIÓN: Conecta la edición general con TanStack Query
+  const updateGeneralMut = useMutation({ 
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => api.updateTaskGeneral(id, payload), 
+    onSuccess: invalidateQueries 
+  });
 
   return {
     createTask: createMut.mutateAsync,
@@ -53,6 +53,7 @@ export const useTaskActions = () => {
     completeTask: completeMut.mutateAsync,
     changePriority: priorityMut.mutateAsync,
     addComment: commentMut.mutateAsync,
+    updateTaskGeneral: updateGeneralMut.mutateAsync, // 🌟 Retorno oficial requerido por el Dashboard
     isSubmitting:
       createMut.isPending ||
       assignMut.isPending ||
@@ -61,6 +62,7 @@ export const useTaskActions = () => {
       resumeMut.isPending ||
       completeMut.isPending ||
       priorityMut.isPending ||
-      commentMut.isPending,
+      commentMut.isPending ||
+      updateGeneralMut.isPending,
   };
 };

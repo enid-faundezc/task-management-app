@@ -79,3 +79,22 @@ export const addTaskComment = async (id: string, comment: string): Promise<void>
   // Envía el body con la propiedad "comment" exigida por AddTaskCommentDto
   await http.post(`/tasks/${id}/comments`, { comment });
 };
+
+// PATCH /tasks/{id} -> TaskController_update
+export const updateTaskGeneral = async (
+  id: string,
+  payload: {
+    title: string;
+    description: string;
+    dueDate?: string;
+    observations?: string;
+  }
+): Promise<void> => {
+  // 🌟 Transformación crítica: Asegura el formato ISO Zulu que le funciona a Postman
+  const finalPayload = {
+    ...payload,
+    dueDate: payload.dueDate ? new Date(payload.dueDate).toISOString() : undefined,
+  };
+
+  await http.patch(`/tasks/${id}`, finalPayload);
+};
