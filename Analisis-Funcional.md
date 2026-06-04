@@ -12,7 +12,7 @@
 	- Agregar comentarios.
 	- Cambiar estado de tareas asignadas.
 
-	(2) Administrador / Líder: Además puede:
+	(2) Administrador: Además puede:
 	- Asignar tareas.
 	- Reasignar tareas.
 	- Cambiar prioridades.

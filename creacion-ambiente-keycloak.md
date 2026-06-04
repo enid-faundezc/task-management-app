@@ -25,7 +25,7 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/client
     -ContentType "application/json" `
     -Body $bodyCliente
 
-# 4. Crear un Rol de Reino
+# 4. Crear un Roles de Reino
 $bodyRol = @{ name = "ADMIN" } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles" `
@@ -34,8 +34,16 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles"
     -ContentType "application/json" `
     -Body $bodyRol
 
-# 5. Crear un usuario
-$bodyUsuario = @{ username = "user1"; enabled = $true } | ConvertTo-Json
+ $bodyRol = @{ name = "USER" } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyRol   
+
+# 5. Crear un usuario rol user
+$bodyUsuario = @{ username = "user1user"; enabled = $true } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users" `
     -Method Post `
@@ -44,7 +52,7 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users"
     -Body $bodyUsuario
 
 # 6. Obtener ID del usuario (CORREGIDO: Se añade [0] porque Keycloak devuelve una lista)
-$usuarioResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users?username=user1" `
+$usuarioResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users?username=user1user" `
     -Method Get `
     -Headers @{ Authorization = "Bearer $token" }
 
@@ -65,7 +73,7 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/
 
 # 8. Asignar el rol (CORREGIDO: Forzar formato de Array JSON)
 # A. Obtener el rol
-$rolResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles/ADMIN" `
+$rolResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles/USER" `
     -Method Get `
     -Headers @{ Authorization = "Bearer $token" }
 
@@ -86,18 +94,18 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/
 $bodyProfileUser = @{
     firstName       = "Usuario"
     lastName        = "Prueba"
-    email           = "user1@example.com"
+    email           = "user1user@example.com"
     emailVerified   = $true
     requiredActions = @()  # Forzar lista de acciones pendientes vacía
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId" ` -Method Put ` -Headers @{ Authorization = "Bearer $token" } ` -ContentType "application/json" ` -Body $bodyProfileUser
 
-# 12. Login y Obtención dinámica del JWT del usuario final (user1)
+# 12. Login y Obtención dinámica del JWT del usuario final (user1user)
 $loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManagement/protocol/openid-connect/token" `
     -Method Post `
     -Body @{ 
-        username    = "user1"
+        username    = "user1user"
         password    = "Password123!"
         grant_type  = "password"
         client_id   = "task-frontend" 
@@ -105,6 +113,80 @@ $loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManage
 
 # 13. Extraer el token de acceso obtenido
 $userToken = $loginResponse.access_token
-$userToken  
+Write-Host "Token de usuario rol user: $userToken"
+
+# 14. Crear un usuario rol userAdmin
+$bodyUsuario = @{ username = "user1admin"; enabled = $true } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyUsuario
+
+# 15. Obtener ID del usuario (CORREGIDO: Se añade [0] porque Keycloak devuelve una lista)
+$usuarioResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users?username=user1admin" `
+    -Method Get `
+    -Headers @{ Authorization = "Bearer $token" }
+
+$userId = $usuarioResponse[0].id
+
+# 16. Definir la contraseña del usuario
+$bodyPassword = @{ 
+    type = "password" 
+    value = "Password123!" 
+    temporary = $false 
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId/reset-password" `
+    -Method Put `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyPassword
+
+# 17. Asignar el rol (CORREGIDO: Forzar formato de Array JSON)
+# A. Obtener el rol
+$rolResponse = Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/roles/ADMIN" `
+    -Method Get `
+    -Headers @{ Authorization = "Bearer $token" }
+
+# 18. Forzar un array explícito en el JSON usando la estructura de PowerShell [pscustomobject]
+$bodyMapping = ConvertTo-Json @( @{
+    id   = $rolResponse.id
+    name = $rolResponse.name
+} )
+
+# 19. Enviar a Keycloak
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId/role-mappings/realm" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $bodyMapping
+    
+# 20. Actualizar el perfil del usuario con datos obligatorios mínimos
+$bodyProfileUser = @{
+    firstName       = "Usuario"
+    lastName        = "Prueba"
+    email           = "user1admin@example.com"
+    emailVerified   = $true
+    requiredActions = @()  # Forzar lista de acciones pendientes vacía
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/users/$userId" ` -Method Put ` -Headers @{ Authorization = "Bearer $token" } ` -ContentType "application/json" ` -Body $bodyProfileUser
+
+# 21. Login y Obtención dinámica del JWT del usuario final (user1user)
+$loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManagement/protocol/openid-connect/token" `
+    -Method Post `
+    -Body @{ 
+        username    = "user1admin"
+        password    = "Password123!"
+        grant_type  = "password"
+        client_id   = "task-frontend" 
+    }
+
+# 22. Extraer el token de acceso obtenido
+$userToken = $loginResponse.access_token
+Write-Host "Token de usuario rol ADMIN: $userToken"
+
     
 ```

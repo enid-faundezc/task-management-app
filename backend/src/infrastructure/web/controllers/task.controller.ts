@@ -49,6 +49,8 @@ import { GetTasksQuery } from 'src/application/task/queries/get-tasks.query';
 import { TaskHistory } from 'src/domain/task/entities/task-history.entity';
 import { ApiResponse } from 'src/shared/api/api-response';
 import { PaginatedResult } from 'src/shared/pagination/paginated-result';
+import { Roles } from 'src/shared/auth/roles.decorator';
+import { Role } from '../../../shared/auth/role.enum';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -69,6 +71,7 @@ export class TaskController {
 
   // EFC: Método para crear tarea
   @Post()
+  @Roles(Role.USER) //EFC: Decorador para validar los roles en el JWT
   @ApiOperation({ summary: 'Create a task' })
   // eslint-disable-next-line prettier/prettier
   async create( @Body() dto: CreateTaskDto,): Promise<ApiResponse<CreateTaskResponseDto>> {
@@ -82,6 +85,7 @@ export class TaskController {
 
   // EFC: Obtener tareas
   @Get()
+  @Roles(Role.USER)
   @ApiOperation({ summary: 'Get tasks' })
   // eslint-disable-next-line prettier/prettier
   async findAll( @Query() filters: TaskFiltersDto ): Promise<ApiResponse<PaginatedResult<TaskResponseDto>>> {
@@ -95,6 +99,7 @@ export class TaskController {
 
   // EFC: Obtener tarea por ID
   @Get(':id')
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Get task by id' })
   // eslint-disable-next-line prettier/prettier
   async findById(@Param('id') id: string): Promise<ApiResponse<TaskResponseDto>> {
@@ -108,6 +113,7 @@ export class TaskController {
 
   // EFC: Obtener historial
   @Get(':id/history')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get task history' })
   // eslint-disable-next-line prettier/prettier
   async history(@Param('id') id: string): Promise<ApiResponse<TaskHistoryResponseDto[]>> {
@@ -123,6 +129,7 @@ export class TaskController {
   }
 
   //EFC: Asignar tarea
+  @Roles(Role.ADMIN)
   @Post(':id/assign')
   @ApiOperation({ summary: 'Assign task' })
   // eslint-disable-next-line prettier/prettier
@@ -135,6 +142,7 @@ export class TaskController {
 
   //EFC: Iniciar tarea
   @Post(':id/start')
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Start task' })
   // eslint-disable-next-line prettier/prettier
   async start(@Param('id') id: string): Promise<ApiResponse<null>> {
@@ -146,6 +154,7 @@ export class TaskController {
 
   //EFC: Detener tarea
   @Post(':id/stop')
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Stop task' })
   // eslint-disable-next-line prettier/prettier
   async stop(@Param('id') id: string): Promise<ApiResponse<null>> {
@@ -157,6 +166,7 @@ export class TaskController {
 
   //EFC: Reanudar tarea
   @Post(':id/resume')
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Resume task' })
   // eslint-disable-next-line prettier/prettier
   async resume(@Param('id') id: string): Promise<ApiResponse<null>> {
@@ -168,6 +178,7 @@ export class TaskController {
 
   //EFC: Completar tarea
   @Post(':id/complete')
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Complete task' })
   // eslint-disable-next-line prettier/prettier
   async complete(@Param('id') id: string): Promise<ApiResponse<null>> {
@@ -179,6 +190,7 @@ export class TaskController {
 
   // EFC: Cambiar prioridad
   @Patch(':id/priority')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Change task priority' })
   // eslint-disable-next-line prettier/prettier
   async changePriority(@Param('id') id: string, @Body() dto: ChangeTaskPriorityDto): Promise<ApiResponse<null>> {
@@ -192,6 +204,7 @@ export class TaskController {
 
   //EFC: Agregar comentario
   @Post(':id/comments')
+  @Roles(Role.USER)
   @ApiOperation({ summary: 'Add comment' })
   // eslint-disable-next-line prettier/prettier
   async addComment(@Param('id') id: string, @Body() dto: AddTaskCommentDto): Promise<ApiResponse<null>> {
