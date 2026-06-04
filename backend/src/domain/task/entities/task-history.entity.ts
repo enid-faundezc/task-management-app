@@ -1,5 +1,4 @@
 import { TaskHistoryEventType } from '../enums/task-history-event-type.enum';
-
 export class TaskHistory {
   constructor(
     public readonly id: string,

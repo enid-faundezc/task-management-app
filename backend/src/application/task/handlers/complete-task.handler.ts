@@ -27,7 +27,7 @@ export class CompleteTaskHandler {
 
     task.complete();
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
 
     return {
       id: task.id,

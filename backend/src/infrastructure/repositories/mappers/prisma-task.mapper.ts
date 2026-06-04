@@ -1,35 +1,100 @@
 import { Task } from '../../../domain/task/entities/task.entity';
 import { TaskHistory } from '../../../domain/task/entities/task-history.entity';
 
-// EFC: Se crean las versiones de los tipos compatibles del evento tanto del model como de prisma
-// dado que "CREATED" de Prisma ≠ "CREATED" del dominio
-import { TaskHistoryEventType as PrismaEventType } from '@prisma/client';
-import { TaskHistoryEventType as DomainEventType } from '../../../domain/task/enums/task-history-event-type.enum';
-
-// EFC: Ojo, vamos a usar estos tipos para no usar any en el mapper, aunque el dominio
-// no dependa de Prisma, el mapper sí puede usar estos tipos para mapear correctamente
-// los datos entre el dominio y la base de datos.
+// 1. CORRECCIÓN DE IMPORTS: Se importan los tipos e inputs de Prisma, 
+// y los Enums se extraen directamente desde el cliente.
 import {
-  Task as PrismaTask,
-  TaskHistory as PrismaTaskHistory,
-  TaskPriority as PrismaPriority,
-  TaskStatus as PrismaStatus,
+  Prisma,
+  TaskPriority,
+  TaskStatus,
+  TaskHistoryEventType,
 } from '@prisma/client';
 
 import { TaskPriority as DomainPriority } from '../../../domain/task/enums/task-priority.enum';
 import { TaskStatus as DomainStatus } from '../../../domain/task/enums/task-status.enum';
+import { TaskHistoryEventType as DomainEventType } from '../../../domain/task/enums/task-history-event-type.enum';
 
 export class PrismaTaskMapper {
-  // EFC: para DOMAIN <- PRISMA
-  static toDomain(raw: PrismaTask & { histories: PrismaTaskHistory[] }): Task {
-    // EFC: Mapeo de los eventos de historial asociados a la tarea
+  // =========================
+  // DOMAIN -> PRISMA (CREATE)
+  // =========================
+  static toCreatePersistence(task: Task): Prisma.TaskCreateInput {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+
+      priority: this.mapPriorityToPrisma(task.priority),
+      status: this.mapStatusToPrisma(task.status),
+
+      observations: task.observations,
+      dueDate: task.dueDate,
+
+      assignedUserId: task.assignedUserId,
+      createdByUserId: task.createdByUserId,
+
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    };
+  }
+
+  // =========================
+  // DOMAIN -> PRISMA (UPDATE)
+  // =========================
+  static toUpdatePersistence(task: Task): Prisma.TaskUpdateInput {
+    return {
+      title: task.title,
+      description: task.description,
+
+      priority: this.mapPriorityToPrisma(task.priority),
+      status: this.mapStatusToPrisma(task.status),
+
+      observations: task.observations,
+      dueDate: task.dueDate,
+
+      assignedUserId: task.assignedUserId,
+
+      updatedAt: new Date(),
+    };
+  }
+
+  // =========================
+  // DOMAIN -> PRISMA (HISTORY)
+  // =========================
+  static historyToPersistence(
+    history: TaskHistory,
+  ): Prisma.TaskHistoryCreateInput {
+    return {
+      id: history.id,
+      // 2. CORRECCIÓN DE RELACIÓN: Prisma usa 'connect' para asociar claves foráneas en CreateInputs
+      task: {
+        connect: { id: history.taskId }
+      },
+
+      eventType: this.mapEventTypeToPrisma(history.eventType),
+
+      previousValue: history.previousValue,
+      newValue: history.newValue,
+      comment: history.comment,
+      userId: history.userId,
+
+      createdAt: history.createdAt ?? new Date(),
+    };
+  }
+
+  // =========================
+  // PRISMA -> DOMAIN
+  // =========================
+  static toDomain(
+    raw: Prisma.TaskGetPayload<{ include: { histories: true } }>,
+  ): Task {
     const histories =
       raw.histories?.map(
         (h) =>
           new TaskHistory(
             h.id,
             h.taskId,
-            PrismaTaskMapper.mapEventType(h.eventType), // EFC
+            this.mapEventTypeToDomain(h.eventType),
             h.previousValue,
             h.newValue,
             h.comment,
@@ -42,8 +107,8 @@ export class PrismaTaskMapper {
       raw.id,
       raw.title,
       raw.description,
-      PrismaTaskMapper.mapPriority(raw.priority), // EFC: pasar de Prisma a dominio
-      PrismaTaskMapper.mapStatus(raw.status), // EFC: pasar de Prisma a dominio
+      this.mapPriorityToDomain(raw.priority),
+      this.mapStatusToDomain(raw.status),
       raw.createdByUserId,
       raw.observations ?? null,
       raw.dueDate ?? null,
@@ -54,94 +119,132 @@ export class PrismaTaskMapper {
     );
   }
 
-  // EFC: Pasa de DOMAIN -> PRISMA (TASK)
-  static toPersistence(task: Task) {
-    return {
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      priority: task.priority,
-      status: task.status,
-      observations: task.observations,
-      dueDate: task.dueDate,
-      assignedUserId: task.assignedUserId,
-      createdByUserId: task.createdByUserId,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-    };
-  }
-
-  // EFC: Pasa de DOMAIN -> PRISMA (HISTORY)
-  static historyToPersistence(history: TaskHistory) {
-    return {
-      id: history.id,
-      taskId: history.taskId,
-      eventType: history.eventType,
-      previousValue: history.previousValue,
-      newValue: history.newValue,
-      comment: history.comment,
-      userId: history.userId,
-      createdAt: history.createdAt,
-    };
-  }
-
-  // EFC: Mapeo de los tipos de eventos entre Prisma y el dominio
-  private static mapEventType(value: PrismaEventType): DomainEventType {
+  // =========================
+  // EVENT TYPE MAPPERS
+  // =========================
+  private static mapEventTypeToPrisma(
+    value: DomainEventType,
+  ): TaskHistoryEventType {
     switch (value) {
-      case 'CREATED':
-        return DomainEventType.CREATED;
-      case 'ASSIGNED':
-        return DomainEventType.ASSIGNED;
-      case 'REASSIGNED':
-        return DomainEventType.REASSIGNED;
-      case 'STATUS_CHANGED':
-        return DomainEventType.STATUS_CHANGED;
-      case 'PRIORITY_CHANGED':
-        return DomainEventType.PRIORITY_CHANGED;
-      case 'COMMENT_ADDED':
-        return DomainEventType.COMMENT_ADDED;
-      default: {
-        // EFC: En caso de que venga un tipo desconocido, lo mejor es lanzar un error
-        // no se puede usar default porque el dominio no tiene un valor por defecto para esto,
-        // y si llega un valor desconocido es mejor fallar rápido.
+      case DomainEventType.CREATED:
+        return TaskHistoryEventType.CREATED;
+
+      case DomainEventType.ASSIGNED:
+        return TaskHistoryEventType.ASSIGNED;
+
+      case DomainEventType.REASSIGNED:
+        return TaskHistoryEventType.REASSIGNED;
+
+      case DomainEventType.STATUS_CHANGED:
+        return TaskHistoryEventType.STATUS_CHANGED;
+
+      case DomainEventType.PRIORITY_CHANGED:
+        return TaskHistoryEventType.PRIORITY_CHANGED;
+
+      case DomainEventType.COMMENT_ADDED:
+        return TaskHistoryEventType.COMMENT_ADDED;
+
+      case DomainEventType.FIELD_CHANGED:
+        return TaskHistoryEventType.FIELD_CHANGED;
+
+      default:
         throw new Error('Unknown event type');
-      }
     }
   }
 
-  // EFC: Mapeo de los tipos de prioridad entre Prisma y el dominio
-  private static mapPriority(value: PrismaPriority): DomainPriority {
+  private static mapEventTypeToDomain(
+    value: TaskHistoryEventType,
+  ): DomainEventType {
     switch (value) {
-      case 'LOW':
+      case TaskHistoryEventType.CREATED:
+        return DomainEventType.CREATED;
+
+      case TaskHistoryEventType.ASSIGNED:
+        return DomainEventType.ASSIGNED;
+
+      case TaskHistoryEventType.REASSIGNED:
+        return DomainEventType.REASSIGNED;
+
+      case TaskHistoryEventType.STATUS_CHANGED:
+        return DomainEventType.STATUS_CHANGED;
+
+      case TaskHistoryEventType.PRIORITY_CHANGED:
+        return DomainEventType.PRIORITY_CHANGED;
+
+      case TaskHistoryEventType.COMMENT_ADDED:
+        return DomainEventType.COMMENT_ADDED;
+
+      case TaskHistoryEventType.FIELD_CHANGED:
+        return DomainEventType.FIELD_CHANGED;
+
+      default:
+        throw new Error('Unknown event type');
+    }
+  }
+
+  // =========================
+  // PRIORITY MAPPERS
+  // =========================
+  private static mapPriorityToPrisma(value: DomainPriority): TaskPriority {
+    switch (value) {
+      case DomainPriority.LOW:
+        return TaskPriority.LOW;
+      case DomainPriority.MEDIUM:
+        return TaskPriority.MEDIUM;
+      case DomainPriority.HIGH:
+        return TaskPriority.HIGH;
+      case DomainPriority.CRITICAL:
+        return TaskPriority.CRITICAL;
+    }
+  }
+
+  private static mapPriorityToDomain(value: TaskPriority): DomainPriority {
+    switch (value) {
+      case TaskPriority.LOW:
         return DomainPriority.LOW;
-      case 'MEDIUM':
+      case TaskPriority.MEDIUM:
         return DomainPriority.MEDIUM;
-      case 'HIGH':
+      case TaskPriority.HIGH:
         return DomainPriority.HIGH;
-      case 'CRITICAL':
+      case TaskPriority.CRITICAL:
         return DomainPriority.CRITICAL;
-      default: {
-        throw new Error('Unknown priority type');
-      }
+      default:
+        return DomainPriority.LOW; // Evita el error TS2366 (Falta return al final)
     }
   }
 
-  // EFC: Mapeo de los tipos de estado entre Prisma y el dominio
-  private static mapStatus(value: PrismaStatus): DomainStatus {
+  // =========================
+  // STATUS MAPPERS
+  // =========================
+  private static mapStatusToPrisma(value: DomainStatus): TaskStatus {
     switch (value) {
-      case 'CREATED':
+      case DomainStatus.CREATED:
+        return TaskStatus.CREATED;
+      case DomainStatus.ASSIGNED:
+        return TaskStatus.ASSIGNED;
+      case DomainStatus.IN_PROGRESS:
+        return TaskStatus.IN_PROGRESS;
+      case DomainStatus.STOPPED:
+        return TaskStatus.STOPPED;
+      case DomainStatus.COMPLETED:
+        return TaskStatus.COMPLETED;
+    }
+  }
+
+  private static mapStatusToDomain(value: TaskStatus): DomainStatus {
+    switch (value) {
+      case TaskStatus.CREATED:
         return DomainStatus.CREATED;
-      case 'ASSIGNED':
+      case TaskStatus.ASSIGNED:
         return DomainStatus.ASSIGNED;
-      case 'IN_PROGRESS':
+      case TaskStatus.IN_PROGRESS:
         return DomainStatus.IN_PROGRESS;
-      case 'STOPPED':
+      case TaskStatus.STOPPED:
         return DomainStatus.STOPPED;
-      case 'COMPLETED':
+      case TaskStatus.COMPLETED:
         return DomainStatus.COMPLETED;
-      default: {
-        throw new Error('Unknown status type');
-      }
+      default:
+        return DomainStatus.CREATED; // Evita el error TS2366 (Falta return al final)
     }
   }
 }

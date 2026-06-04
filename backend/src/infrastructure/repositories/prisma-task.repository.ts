@@ -9,6 +9,7 @@ import { PrismaTaskMapper } from './mappers/prisma-task.mapper';
 import { Prisma } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
 import { TaskFiltersDto } from 'src/application/task/dto/task-filters.dto';
+import { $Enums } from '@prisma/client'; // Importa los enums de Prisma
 
 // EFC: La función de este servicio es Persistir Aggregate,
 // ojo TaskRepository es una clase abstracta, no una interface.
@@ -42,7 +43,7 @@ export class PrismaTaskRepository extends TaskRepository {
   async save(task: Task): Promise<void> {
     // 1. Persistir la tarea directamente
     await this.prisma.client.task.create({
-      data: PrismaTaskMapper.toPersistence(task),
+      data: PrismaTaskMapper.toCreatePersistence(task),
     });
 
     // 2. Persistir el historial de eventos secuencialmente si existen
@@ -197,7 +198,7 @@ export class PrismaTaskRepository extends TaskRepository {
     // UPDATE TASK
     await this.prisma.client.task.update({
       where: { id },
-      data: PrismaTaskMapper.toPersistence(task),
+      data: PrismaTaskMapper.toUpdatePersistence(task),
     });
 
     // PERSIST EVENTS SECUENCIALMENTE (igual que save)

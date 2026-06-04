@@ -27,6 +27,6 @@ export class AddTaskCommentHandler {
 
     task.addComment(command.comment);
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
   }
 }

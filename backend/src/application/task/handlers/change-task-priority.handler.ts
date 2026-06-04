@@ -16,6 +16,6 @@ export class ChangeTaskPriorityHandler {
 
     task.changePriority(command.priority);
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
   }
 }

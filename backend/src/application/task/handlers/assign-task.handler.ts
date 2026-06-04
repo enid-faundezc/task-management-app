@@ -16,6 +16,6 @@ export class AssignTaskHandler {
 
     task.assign(command.userId);
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
   }
 }

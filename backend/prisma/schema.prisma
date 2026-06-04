@@ -33,10 +33,11 @@ enum TaskHistoryEventType {
   STATUS_CHANGED
   PRIORITY_CHANGED
   COMMENT_ADDED
+  FIELD_CHANGED
 }
 
 model Task {
-  id String @id
+  id String  @id @default(uuid())
   title String @db.VarChar(200)
   description String @db.VarChar(500)
   priority TaskPriority

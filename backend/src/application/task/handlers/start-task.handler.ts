@@ -25,6 +25,6 @@ export class StartTaskHandler {
 
     task.start();
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
   }
 }

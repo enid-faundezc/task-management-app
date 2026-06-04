@@ -26,6 +26,6 @@ export class ResumeTaskHandler {
 
     task.resume();
 
-    await this.taskRepository.update(task);
+    await this.taskRepository.update(command.taskId, task);
   }
 }

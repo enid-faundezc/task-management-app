@@ -21,6 +21,7 @@ import { GetTasksHandler } from '../../application/task/handlers/get-tasks.handl
 import { GetTaskByIdHandler } from '../../application/task/handlers/get-task-by-id.handler';
 import { GetTaskHistoryHandler } from '../../application/task/handlers/get-task-history.handler';
 import { PrismaModule } from 'src/infrastructure/database/prisma.module';
+import { UpdateTaskHandler } from 'src/application/task/handlers/update-task.handler';
 
 @Module({
   imports: [PrismaModule], // EFC: Simplificamos la llamda al módulo completo.
@@ -30,6 +31,7 @@ import { PrismaModule } from 'src/infrastructure/database/prisma.module';
     TaskFactory,
 
     CreateTaskHandler,
+    UpdateTaskHandler,
     AssignTaskHandler,
     StartTaskHandler,
     StopTaskHandler,

@@ -54,12 +54,15 @@ import { Role } from '../../../shared/auth/role.enum';
 import { Request } from '@nestjs/common';
 import type { AuthRequest } from 'src/shared/auth/auth-request.interface';
 import { UpdateTaskDto } from 'src/application/task/dto/update-task.dto';
+import { UpdateTaskHandler } from 'src/application/task/handlers/update-task.handler';
+import { UpdateTaskCommand } from '../../../application/task/commands/update-task.command';
 
 @ApiTags('Tasks')
 @Controller('tasks')
 export class TaskController {
   constructor(
     private readonly createTaskHandler: CreateTaskHandler,
+    private readonly updateTaskHandler: UpdateTaskHandler,
     private readonly getTasksHandler: GetTasksHandler,
     private readonly getTaskByIdHandler: GetTaskByIdHandler,
     private readonly assignTaskHandler: AssignTaskHandler,
