@@ -32,6 +32,7 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms" `
     -Body '{"realm": "TaskManagement", "enabled": true}'
 
 
+
 # 3. Crear cliente con políticas de redirección y orígenes seguros (Evita error redirect_uri y CORS)
 $bodyCliente = @{ 
     clientId                  = "task-frontend" # 🌟 Asegúrate de usar este mismo en tu main.tsx
@@ -48,6 +49,30 @@ Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/client
     -Headers @{ Authorization = "Bearer $token" } `
     -ContentType "application/json" `
     -Body $bodyCliente
+
+
+# habilitar cors para el admin-cli
+
+$client = Invoke-RestMethod `
+    -Uri "http://localhost:9090/admin/realms/master/clients?clientId=admin-cli" `
+    -Method Get `
+    -Headers @{ Authorization = "Bearer $token" }
+
+$clientMasterId = $client[0].id
+
+$bodyAdminCli = @{
+    id = $clientMasterId
+    clientId = "admin-cli"
+    webOrigins = @("http://localhost:5173") # 🌐 Confía de forma explícita en tu puerto local de Vite
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/master/clients/$clientMasterId" `
+    -Method Put `
+    -Headers @{Authorization="Bearer $token"} `
+    -ContentType "application/json" `
+    -Body $bodyAdminCli
+
+Write-Host "🌐 CORS habilitado con éxito en Keycloak Master para el puerto 5173." -ForegroundColor Green
 
 # 4. Crear un Roles de Reino
 $bodyRol = @{ name = "ADMIN" } | ConvertTo-Json
@@ -267,6 +292,30 @@ $loginResponse = Invoke-RestMethod -Uri "http://localhost:9090/realms/TaskManage
 # 22. Extraer el token de acceso obtenido
 $userToken = $loginResponse.access_token
 Write-Host "Token de usuario rol ADMIN: $userToken"
+
+ # 1. Buscar el ID interno de admin-cli pero en el realm TaskManagement
+$clientTM = Invoke-RestMethod `
+    -Uri "http://localhost:9090/admin/realms/TaskManagement/clients?clientId=admin-cli" `
+    -Method Get `
+    -Headers @{ Authorization = "Bearer $token" }
+
+$clientTMId = $clientTM[0].id
+
+# 2. Modificar el cuerpo para habilitar el origen en TaskManagement
+$bodyAdminCliTM = @{
+    id = $clientTMId
+    clientId = "admin-cli"
+    webOrigins = @("http://localhost:5173") 
+} | ConvertTo-Json
+
+# 3. Aplicar los cambios en el realm de tu negocio
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/clients/$clientTMId" `
+    -Method Put `
+    -Headers @{Authorization="Bearer $token"} `
+    -ContentType "application/json" `
+    -Body $bodyAdminCliTM
+
+Write-Host "🌐 CORS habilitado con éxito en Realm TaskManagement para el puerto"
 
     
 ```

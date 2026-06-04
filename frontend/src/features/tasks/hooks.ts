@@ -66,3 +66,15 @@ export const useTaskActions = () => {
       updateGeneralMut.isPending,
   };
 };
+
+export const useKeycloakUsers = (isEnabled: boolean) => {
+  return useQuery({
+    queryKey: ['keycloakUsersReal'],
+    queryFn: async () => {
+      const token = await api.getKeycloakAdminToken(); // Pide token a master
+      return api.getKeycloakUsersReal(token);          // Trae usuarios de TaskManagement
+    },
+    enabled: isEnabled,
+    staleTime: 300000, // Almacena en caché por 5 minutos para rendimiento óptimo
+  });
+};

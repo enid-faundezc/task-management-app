@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/auth.store';
-import { useTasks, useTaskDetail, useTaskActions } from '../features/tasks/hooks';
+import { useTasks, useTaskDetail, useTaskActions, useKeycloakUsers } from '../features/tasks/hooks';
 import { type TaskFilters, type TaskPriority } from '../features/tasks/types';
 import * as rules from '../features/tasks/rules';
 
@@ -45,10 +45,7 @@ export const TasksDashboard = () => {
   const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
 
   // Lista mockeada de usuarios de tu Keycloak local para alimentar el Combo/Select
-  const [keycloakUsers] = useState([
-    { id: 'a7e0460a-955f-4ae7-89a3-fad07c3df5a0', name: 'Usuario Operador 1' },
-    { id: 'd01f8374-0fd2-4b1b-8f46-a1f0ef329c86', name: 'Usuario Operador 2' }
-  ]);
+  const { data: keycloakUsersReal, isLoading: isLoadingUsers } = useKeycloakUsers(user?.role === 'ADMIN');
 
    // Controlador oficial para ejecutar el POST /tasks/{id}/assign (RF-05, RN-07)
   const handleAssignSubmit = async (e: React.FormEvent) => {
@@ -513,16 +510,22 @@ export const TasksDashboard = () => {
                 <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.4rem' }}>
                   Seleccionar Operador (Keycloak) *
                 </label>
+
+                {/* la lectura desde keycloak */}
                 <select 
                   required
                   value={selectedAssigneeId} 
                   onChange={(e) => setSelectedAssigneeId(e.target.value)} 
                   style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.9rem' }}
                 >
-                  <option value="">-- Seleccionar un responsable --</option>
-                  {keycloakUsers.map((u) => (
+                  <option value="">
+                    {isLoadingUsers ? 'Conectando con Keycloak Master...' : '-- Seleccionar un responsable --'}
+                  </option>
+                  
+                  {/* 🌟 Mapeo dinámico sobre los usuarios reales obtenidos del servidor */}
+                  {keycloakUsersReal && keycloakUsersReal.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.name} ({u.id.substring(0, 8)}...)
+                      {u.username} ({u.id.substring(0, 8)}...)
                     </option>
                   ))}
                 </select>

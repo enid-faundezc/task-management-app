@@ -3,11 +3,18 @@
 // tipando tanto las entradas de los filtros como las respuestas paginadas.
 
 import { http } from '../../api/http';
+import axios from 'axios';
 import { 
   type Task, 
   type TaskFilters, 
   type PaginatedResponse 
 } from './types';
+
+export interface KeycloakUser {
+  id: string;
+  username: string;
+  enabled: boolean;
+}
 
 // GET /tasks -> TaskController_findAll (RF-02, RF-03)
 export const getTasks = async (params: TaskFilters): Promise<PaginatedResponse<Task>> => {
@@ -98,4 +105,30 @@ export const updateTaskGeneral = async (
   };
 
   await http.patch(`/tasks/${id}`, finalPayload);
+};
+
+// EFC: Acá encontré que no deja conectar directo a Keyclok, hay que hacerlo a tráves del proxy vite (frontend\vite.config.ts)
+// 1. Obtener Token Maestro desde el Realm Master a través del proxy
+export const getKeycloakAdminToken = async (): Promise<string> => {
+  const params = new URLSearchParams();
+  params.append('username', 'admin');     
+  params.append('password', 'admin');     
+  params.append('grant_type', 'password');
+  params.append('client_id', 'admin-cli'); 
+
+  const { data } = await axios.post<{ access_token: string }>(
+    '/keycloak-admin/realms/master/protocol/openid-connect/token', // 🔄 Cambiado a ruta relativa
+    params,
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  );
+  return data.access_token;
+};
+
+// 2. Traer los usuarios del Realm TaskManagement usando la ruta del proxy
+export const getKeycloakUsersReal = async (adminToken: string): Promise<KeycloakUser[]> => {
+  const { data } = await axios.get<KeycloakUser[]>(
+    '/keycloak-admin/admin/realms/TaskManagement/users', // 🔄 Cambiado a ruta relativa
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  );
+  return data;
 };
