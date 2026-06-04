@@ -8,6 +8,7 @@ import { TaskNotFoundException } from 'src/domain/task/exceptions/task-not-found
 import { PrismaTaskMapper } from './mappers/prisma-task.mapper';
 import { Prisma } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
+import { TaskFiltersDto } from 'src/application/task/dto/task-filters.dto';
 
 // EFC: La función de este servicio es Persistir Aggregate,
 // ojo TaskRepository es una clase abstracta, no una interface.
@@ -17,6 +18,22 @@ export class PrismaTaskRepository extends TaskRepository {
     super();
   }
 
+  private buildWhere(filters: TaskFiltersDto): Prisma.TaskWhereInput {
+    return {
+      ...(filters.status && { status: filters.status }),
+      ...(filters.priority && { priority: filters.priority }),
+      ...(filters.assignedUserId && {
+        assignedUserId: filters.assignedUserId,
+      }),
+      ...(filters.search && {
+        title: {
+          contains: filters.search,
+          mode: 'insensitive',
+        },
+      }),
+    };
+  }
+
   // EFC: Nota: Repository NO crea ni modifica el dominio
   // Repository SOLO persiste, por eso su return es void, el dominio
   // se crea y modifica en el servicio de dominio, y luego se le pasa al
@@ -24,8 +41,8 @@ export class PrismaTaskRepository extends TaskRepository {
   // EFC: En este método se persiste la tarea y sus eventos pendientes de persistencia.
   async save(task: Task): Promise<void> {
     // 1. Persistir la tarea directamente
-    await this.prisma.client.task.create({ 
-      data: PrismaTaskMapper.toPersistence(task) 
+    await this.prisma.client.task.create({
+      data: PrismaTaskMapper.toPersistence(task),
     });
 
     // 2. Persistir el historial de eventos secuencialmente si existen
@@ -37,38 +54,6 @@ export class PrismaTaskRepository extends TaskRepository {
         });
       }
     }
-
-    task.clearPendingHistory();
-  }
-  // EFC: Actualizar tarea en BD
-  async update(task: Task): Promise<void> {
-    await this.prisma.client.$transaction(async (tx) => {
-      // 1. Update TASK
-      await tx.task.update({
-        where: { id: task.id },
-        data: {
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          status: task.status,
-          observations: task.observations,
-          dueDate: task.dueDate,
-          assignedUserId: task.assignedUserId,
-          updatedAt: task.updatedAt,
-        },
-      });
-
-      // EFC: 2. Persistir SOLO eventos nuevos
-      const events = task.getPendingHistory();
-
-      if (events.length > 0) {
-        await tx.taskHistory.createMany({
-          data: events.map((event) =>
-            PrismaTaskMapper.historyToPersistence(event),
-          ),
-        });
-      }
-    });
 
     task.clearPendingHistory();
   }
@@ -147,6 +132,54 @@ export class PrismaTaskRepository extends TaskRepository {
     };
   }
 
+  //EFC: Para buscar según el tipo de filtro
+  async findVisibleToUser(
+    userId: string,
+    filters: TaskFiltersDto,
+  ): Promise<PaginatedResult<Task>> {
+    const page = filters.page ?? 1;
+    const size = filters.size ?? 10;
+
+    const baseWhere = this.buildWhere(filters);
+
+    const where = {
+      AND: [
+        baseWhere,
+        {
+          OR: [{ createdByUserId: userId }, { assignedUserId: userId }],
+        },
+      ],
+    };
+
+    const [tasks, total] = await Promise.all([
+      this.prisma.client.task.findMany({
+        where,
+        include: {
+          histories: true,
+        },
+        skip: (page - 1) * size,
+        take: size,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.client.task.count({ where }),
+    ]);
+
+    type TaskWithHistories = Prisma.TaskGetPayload<{
+      include: { histories: true };
+    }>;
+
+    const typedTasks = tasks as TaskWithHistories[];
+
+    return {
+      data: typedTasks.map((task) => PrismaTaskMapper.toDomain(task)),
+      total,
+      page,
+      size,
+    };
+  }
+
   // EFC: Método adicional para obtener una tarea o lanzar excepción 
   // si no existe, útil para casos donde se requiere la existencia de la tarea.
   async findOrFail(id: string): Promise<Task> {
@@ -157,5 +190,28 @@ export class PrismaTaskRepository extends TaskRepository {
     }
 
     return task;
+  }
+
+  // EFC: Actualizar tarea en BD
+  async update(id: string, task: Task): Promise<void> {
+    // UPDATE TASK
+    await this.prisma.client.task.update({
+      where: { id },
+      data: PrismaTaskMapper.toPersistence(task),
+    });
+
+    // PERSIST EVENTS SECUENCIALMENTE (igual que save)
+    const events = task.getPendingHistory();
+
+    if (events.length > 0) {
+      for (const event of events) {
+        await this.prisma.client.taskHistory.create({
+          data: PrismaTaskMapper.historyToPersistence(event),
+        });
+      }
+    }
+
+    // 3. LIMPIAR EVENTOS
+    task.clearPendingHistory();
   }
 }

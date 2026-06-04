@@ -13,6 +13,7 @@ let globalPool: Pool | undefined;
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public client: PrismaClient;
+  task: any;
 
   constructor() {
     if (!globalPool) {

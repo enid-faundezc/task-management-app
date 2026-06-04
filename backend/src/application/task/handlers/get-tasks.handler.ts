@@ -9,7 +9,12 @@ export class GetTasksHandler {
   constructor(private readonly taskRepository: TaskRepository) {}
 
   async execute(query: GetTasksQuery): Promise<PaginatedTaskResponseDto> {
-    const result = await this.taskRepository.findAll(query.filters);
+    const { filters, user } = query;
+    const isAdmin = user.roles.includes('ADMIN');
+
+    const result = isAdmin
+      ? await this.taskRepository.findAll(filters)
+      : await this.taskRepository.findVisibleToUser(user.userId, filters);
 
     return {
       data: result.data.map((task) => TaskMapper.toResponse(task)),

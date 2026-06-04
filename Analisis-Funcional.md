@@ -6,17 +6,34 @@
 
 ## Actores
 	(1) Usuario, puede:
-	- Crear tareas.
-	- Visualizar tareas.
-	- Modificar tareas permitidas.
-	- Agregar comentarios.
-	- Cambiar estado de tareas asignadas.
+	- VER:
+		tareas que creó
+		tareas asignadas a él
+	-	MODIFICAR:
+		solo tareas que creó (no asignadas por otros)
+	-	ACCIONES:
+		cambiar estado SOLO si está asignada a él
+		comentar cualquier tarea donde participa (creada o asignada)
 
 	(2) Administrador: Además puede:
-	- Asignar tareas.
-	- Reasignar tareas.
-	- Cambiar prioridades.
-	- Visualizar historial completo.
+	- ver TODO
+	- modificar TODO
+	- asignar/reasignar
+	- cambiar prioridad
+	- ver historial completo
+
+## Matriz de permisos:
+	Acción								USER	ADMIN
+	Ver tareas creadas					✔		 ✔
+	Ver tareas asignadas				✔		 ✔
+	Ver todas tareas					❌	    ✔
+	Crear tareas						✔		 ✔
+	Editar 	tarea creada				✔		 ✔
+	Editar 	tarea asignada por otro		❌	    ✔
+	Cambiar estado asignada				✔		 ✔
+	Asignar tarea						❌	    ✔
+	Cambiar prioridad					❌		✔
+	Ver historial						propias   ✔
 
 ## Modelo Funcional
 	Entidad Principal: "Task"

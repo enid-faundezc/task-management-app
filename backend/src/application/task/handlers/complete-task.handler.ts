@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CompleteTaskCommand } from '../commands/complete-task.command';
 import { TaskRepository } from '../../../domain/task/repositories/task.repository';
 import { TaskNotFoundException } from '../../../domain/task/exceptions/task-not-found.exception';
@@ -12,9 +12,17 @@ export class CompleteTaskHandler {
     command: CompleteTaskCommand,
   ): Promise<CompleteTaskResponseDto> {
     const task = await this.taskRepository.findById(command.taskId);
+    const { user } = command;
+    const isAdmin = user.roles.includes('ADMIN');
 
     if (!task) {
       throw new TaskNotFoundException(command.taskId);
+    }
+
+    const canExecute = isAdmin || task.assignedUserId === user.userId;
+
+    if (!canExecute) {
+      throw new ForbiddenException();
     }
 
     task.complete();

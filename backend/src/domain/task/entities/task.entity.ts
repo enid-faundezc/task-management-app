@@ -241,4 +241,70 @@ export class Task {
       this.assignedUserId,
     );
   }
+
+  update(data: {
+    title?: string;
+    description?: string;
+    dueDate?: Date;
+    observations?: string;
+  }) {
+    //EFC: Se auditan todos los cambios
+    if (data.title && data.title !== this.title) {
+      const oldValue = this.title;
+      this.title = data.title;
+
+      this.registerHistory(
+        TaskHistoryEventType.FIELD_CHANGED,
+        oldValue,
+        this.title,
+        'title',
+        this.assignedUserId,
+      );
+    }
+
+    // DESCRIPTION
+    if (data.description && data.description !== this.description) {
+      const oldValue = this.description;
+      this.description = data.description;
+
+      this.registerHistory(
+        TaskHistoryEventType.FIELD_CHANGED,
+        oldValue,
+        this.description,
+        'description',
+        this.assignedUserId,
+      );
+    }
+
+    // DUE DATE
+    if (data.dueDate && data.dueDate !== this.dueDate) {
+      const oldValue = this.dueDate;
+
+      this.dueDate = data.dueDate;
+
+      this.registerHistory(
+        TaskHistoryEventType.FIELD_CHANGED,
+        oldValue ? oldValue.toISOString() : null,
+        data.dueDate.toISOString(),
+        'dueDate',
+        this.assignedUserId,
+      );
+    }
+
+    // OBSERVATIONS
+    if (data.observations && data.observations !== this.observations) {
+      const oldValue = this.observations;
+      this.observations = data.observations;
+
+      this.registerHistory(
+        TaskHistoryEventType.FIELD_CHANGED,
+        oldValue,
+        this.observations,
+        'observations',
+        this.assignedUserId,
+      );
+    }
+
+    this.updatedAt = new Date();
+  }
 }

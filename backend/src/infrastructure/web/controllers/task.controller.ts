@@ -51,6 +51,9 @@ import { ApiResponse } from 'src/shared/api/api-response';
 import { PaginatedResult } from 'src/shared/pagination/paginated-result';
 import { Roles } from 'src/shared/auth/roles.decorator';
 import { Role } from '../../../shared/auth/role.enum';
+import { Request } from '@nestjs/common';
+import type { AuthRequest } from 'src/shared/auth/auth-request.interface';
+import { UpdateTaskDto } from 'src/application/task/dto/update-task.dto';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -83,15 +86,32 @@ export class TaskController {
     return ApiResponse.success(response, 'Task created successfully');
   }
 
-  // EFC: Obtener tareas
+  // EFC: Método para modificar la tarea:
+  @Patch(':id')
+  @Roles(Role.USER, Role.ADMIN)
+  @ApiOperation({ summary: 'Update task' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateTaskDto,
+    @Request() req: AuthRequest,
+  ): Promise<ApiResponse<TaskResponseDto>> {
+
+    const result = await this.updateTaskHandler.execute(
+      new UpdateTaskCommand(id, dto, req.user),
+    );
+
+    return ApiResponse.success(result, 'Task updated successfully');
+  }
+
+  // EFC: Obtener tareas: Si es admin todas, si es user: Solo las propias.
   @Get()
-  @Roles(Role.USER)
+  @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Get tasks' })
   // eslint-disable-next-line prettier/prettier
-  async findAll( @Query() filters: TaskFiltersDto ): Promise<ApiResponse<PaginatedResult<TaskResponseDto>>> {
+  async findAll( @Query() filters: TaskFiltersDto, @Request() req: AuthRequest): Promise<ApiResponse<PaginatedResult<TaskResponseDto>>> {
 
     const result = await this.getTasksHandler.execute(
-      new GetTasksQuery(filters),
+      new GetTasksQuery(filters, req.user),
     );
 
     return ApiResponse.success(result, 'Tasks retrieved successfully');
@@ -102,10 +122,10 @@ export class TaskController {
   @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Get task by id' })
   // eslint-disable-next-line prettier/prettier
-  async findById(@Param('id') id: string): Promise<ApiResponse<TaskResponseDto>> {
+  async findById(@Param('id') id: string, @Request() req: AuthRequest): Promise<ApiResponse<TaskResponseDto>> {
 
     const task = await this.getTaskByIdHandler.execute(
-      new GetTaskByIdQuery(id),
+      new GetTaskByIdQuery(id, req.user),
     );
 
     return ApiResponse.success(task, 'Task retrieved successfully');
@@ -114,7 +134,7 @@ export class TaskController {
   // EFC: Obtener historial
   @Get(':id/history')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get task history' })
+  @ApiOperation({ summary: 'Get task history ' })
   // eslint-disable-next-line prettier/prettier
   async history(@Param('id') id: string): Promise<ApiResponse<TaskHistoryResponseDto[]>> {
 
@@ -145,9 +165,9 @@ export class TaskController {
   @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Start task' })
   // eslint-disable-next-line prettier/prettier
-  async start(@Param('id') id: string): Promise<ApiResponse<null>> {
+  async start(@Param('id') id: string, @Request() req: AuthRequest): Promise<ApiResponse<null>> {
 
-    await this.startTaskHandler.execute(new StartTaskCommand(id));
+    await this.startTaskHandler.execute(new StartTaskCommand(id, req.user));
 
     return ApiResponse.success(null, 'Task started successfully');
   }
@@ -157,9 +177,9 @@ export class TaskController {
   @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Stop task' })
   // eslint-disable-next-line prettier/prettier
-  async stop(@Param('id') id: string): Promise<ApiResponse<null>> {
+  async stop(@Param('id') id: string, @Request() req: AuthRequest): Promise<ApiResponse<null>> {
 
-    await this.stopTaskHandler.execute(new StopTaskCommand(id));
+    await this.stopTaskHandler.execute(new StopTaskCommand(id, req.user));
 
     return ApiResponse.success(null, 'Task stopped successfully');
   }
@@ -169,9 +189,9 @@ export class TaskController {
   @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Resume task' })
   // eslint-disable-next-line prettier/prettier
-  async resume(@Param('id') id: string): Promise<ApiResponse<null>> {
+  async resume(@Param('id') id: string, @Request() req: AuthRequest): Promise<ApiResponse<null>> {
 
-    await this.resumeTaskHandler.execute(new ResumeTaskCommand(id));
+    await this.resumeTaskHandler.execute(new ResumeTaskCommand(id, req.user));
 
     return ApiResponse.success(null, 'Task resumed successfully');
   }
@@ -181,9 +201,11 @@ export class TaskController {
   @Roles(Role.USER, Role.ADMIN)
   @ApiOperation({ summary: 'Complete task' })
   // eslint-disable-next-line prettier/prettier
-  async complete(@Param('id') id: string): Promise<ApiResponse<null>> {
+  async complete(@Param('id') id: string, @Request() req: AuthRequest): Promise<ApiResponse<null>> {
 
-    await this.completeTaskHandler.execute(new CompleteTaskCommand(id));
+    await this.completeTaskHandler.execute(
+      new CompleteTaskCommand(id, req.user),
+    );
 
     return ApiResponse.success(null, 'Task completed successfully');
   }
@@ -207,10 +229,10 @@ export class TaskController {
   @Roles(Role.USER)
   @ApiOperation({ summary: 'Add comment' })
   // eslint-disable-next-line prettier/prettier
-  async addComment(@Param('id') id: string, @Body() dto: AddTaskCommentDto): Promise<ApiResponse<null>> {
+  async addComment(@Param('id') id: string, @Body() dto: AddTaskCommentDto, @Request() req: AuthRequest): Promise<ApiResponse<null>> {
 
     await this.addCommentHandler.execute(
-      new AddTaskCommentCommand(id, dto.comment),
+      new AddTaskCommentCommand(id, dto.comment, req.user),
     );
 
     return ApiResponse.success(null, 'Comment added successfully');
