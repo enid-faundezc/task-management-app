@@ -61,3 +61,15 @@ npm run start:dev
 ```  
 
 8. Verificar swagger: http://localhost:3000/api/docs
+
+9. Levantar frontend (en task-management-app\frontend\): 
+```bash
+# Terminal Shell
+npm run dev
+```  
+
+10. Revisar: http://localhost:5173.
+
+11. Usuarios:
+    Usuario Rol Usuario: user1user  Password123!
+    Usuario Rol Admin:   user1admin Password123!

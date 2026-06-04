@@ -9,14 +9,38 @@
 $token = (Invoke-RestMethod -Uri "http://localhost:9090/realms/master/protocol/openid-connect/token" -Method Post -Body @{username="admin"; password="admin"; grant_type="password"; client_id="admin-cli"}).access_token
 
 # 2. Crear el Realm
-Invoke-RestMethod -Uri "http://localhost:9090/admin/realms" -Method Post -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body '{"realm": "TaskManagement", "enabled": true}'
+# ====================================================================
+# RN-RESET: ELIMINAR REALM EXISTENTE (Si existe, para forzar un reset)
+# ====================================================================
+# Usamos -ErrorAction SilentlyContinue para que si es la primera vez que se corre, 
+# el script no se detenga si el Realm aún no existe.
+try {
+    Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement" `
+        -Method Delete `
+        -Headers @{Authorization="Bearer $token"} `
+        -ErrorAction SilentlyContinue
+    Write-Host "🔄 Realm anterior 'TaskManagement' eliminado con éxito. Reseteando entorno..." -ForegroundColor Yellow
+} catch {
+    Write-Host "✨ No se detectó un Realm previo. Procediendo con instalación limpia." -ForegroundColor Green
+}
 
-# 3. Crear client
+# 2. CREAR EL REALM (Tu código original modificado)
+Invoke-RestMethod -Uri "http://localhost:9090/admin/realms" `
+    -Method Post `
+    -Headers @{Authorization="Bearer $token"} `
+    -ContentType "application/json" `
+    -Body '{"realm": "TaskManagement", "enabled": true}'
+
+
+# 3. Crear cliente con políticas de redirección y orígenes seguros (Evita error redirect_uri y CORS)
 $bodyCliente = @{ 
-    clientId = "task-frontend" 
-    enabled = $true 
-    publicClient = $true 
+    clientId                  = "task-frontend" # 🌟 Asegúrate de usar este mismo en tu main.tsx
+    enabled                   = $true 
+    publicClient              = $true           # Permite el flujo en apps públicas (React)
+    standardFlowEnabled       = $true           # Activa el flujo estándar OIDC de redirección
     directAccessGrantsEnabled = $true 
+    redirectUris              = @("http://localhost:5173/*") # 🔐 Soluciona el error 'Invalid parameter: redirect_uri'
+    webOrigins                = @("http://localhost:5173")   # 🌐 Soluciona futuros errores de CORS en local
 } | ConvertTo-Json -Depth 5
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/clients" `

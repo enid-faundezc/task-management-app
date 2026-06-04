@@ -26,6 +26,12 @@ async function bootstrap() {
     }),
   );
 
+  // EFC: Habilitar CORS para que tu front local pueda consumir la API
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
+
   // EFC: Registrar el control global de errores (estilo controller advised de java spring boot)
   app.useGlobalFilters(new GlobalExceptionFilter());
 

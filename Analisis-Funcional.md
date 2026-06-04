@@ -545,14 +545,17 @@ Ingeniería del SW:
 	NOTA: En lugar de depender de herramientas de estado global (como Redux o React Context) para guardar datos de APIs, TanStack Query se enfoca exclusivamente en el estado asíncrono, ofreciendo estas ventajas:Caché inteligente: Almacena los resultados y los reutiliza, reduciendo el número de peticiones innecesarias al servidor.Actualizaciones en segundo plano: Revalida y actualiza los datos de forma silenciosa e invisible para el usuario.Gestión de estados: Proporciona variables automáticas de isPending (cargando) e isError (error) para controlar la interfaz de usuario fácilmente.Sincronización: Actualiza automáticamente los datos si el usuario cambia de pestaña y regresa, o si pierde y recupera la conexión a internet.
 
 ## Estructura del front:
-	src
-	├── app
-	├── features
-	│   ├── auth
-	│   └── tasks
-	├── pages
-	├── shared
-	├── hooks
-	├── services
-	├── store
-	└── components
+	/src
+	├── app/
+	│    └── main.tsx             (Punto de entrada + Inicializador Keycloak)
+	├── api/
+	│    └── http.ts             (Instancia de Axios + Interceptor JWT)
+	├── store/
+	│    └── auth.store.ts       (Estado global de Zustand para el Usuario)
+	├── features/tasks/
+	│    ├── types.ts            (Contratos OpenAPI y Tipos de la app)
+	│    ├── rules.ts            (Validador de Reglas de Negocio RN-01 a RN-18)
+	│    ├── api.ts              (Llamados estrictos a los Endpoints)
+	│    └── hooks.ts            (Queries y Mutaciones de TanStack)
+	└── pages/
+		└── TasksDashboard.tsx  (Pantalla única: Filtros + Tabla + Modales)
