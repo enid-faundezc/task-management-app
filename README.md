@@ -60,7 +60,7 @@ SELECT * FROM "Task"; #  Consulta los registros de la tabla Task (usa comillas d
 npm run start:dev 
 ```  
 
-8. Verificar swagger: http://localhost:3000/api/docs
+8. Verificar swagger (local): http://localhost:3000/api/docs (docker:  http://localhost:3000/api/docs)
 
 9. Levantar frontend (en task-management-app\frontend\): 
 ```bash

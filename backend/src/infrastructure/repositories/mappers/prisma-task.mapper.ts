@@ -68,7 +68,7 @@ export class PrismaTaskMapper {
       id: history.id,
       // 2. CORRECCIÓN DE RELACIÓN: Prisma usa 'connect' para asociar claves foráneas en CreateInputs
       task: {
-        connect: { id: history.taskId }
+        connect: { id: history.taskId },
       },
 
       eventType: this.mapEventTypeToPrisma(history.eventType),

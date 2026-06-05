@@ -15,6 +15,22 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Completado'
 };
 
+// Diccionario para traducir prioridades a textos amables
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  LOW: 'Baja',
+  MEDIUM: 'Media',
+  HIGH: 'Alta',
+  CRITICAL: 'Crítica'
+};
+
+// Diccionario de colores (Fondo y Texto) usando Tailwind/Hex estándar muy legibles
+const PRIORITY_STYLES: Record<TaskPriority, { bg: string; color: string }> = {
+  LOW: { bg: '#f1f5f9', color: '#475569' },       // Gris
+  MEDIUM: { bg: '#fef9c3', color: '#854d0e' },    // Amarillo oscuro
+  HIGH: { bg: '#ffedd5', color: '#c2410c' },      // Naranja
+  CRITICAL: { bg: '#fee2e2', color: '#b91c1c' }   // Rojo
+};
+
 export const TasksDashboard = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -60,8 +76,24 @@ export const TasksDashboard = () => {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
 
-  // Lista mockeada de usuarios de tu Keycloak local para alimentar el Combo/Select
+  // EFC: Lista  de usuarios de Keycloak local para alimentar el Combo/Select
   const { data: keycloakUsersReal, isLoading: isLoadingUsers } = useKeycloakUsers(user?.role === 'ADMIN');
+
+  // EFC: Ahora, la ista de usuarios la definimos con usememo para retulizar su contenido.
+  // este mapa está optimizado para indexar los nombres por ID
+  const usersMap = React.useMemo(() => {
+  const map: Record<string, string> = {};
+
+  // Si no es admin o aún está cargando, devolvemos el mapa vacío
+  if (!keycloakUsersReal) return map; 
+    keycloakUsersReal.forEach((u) => {
+      // EFC: Por ahora simple nada más
+      // const fullName = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
+      // map[u.id] = fullName || u.username || 'Usuario sin nombre';
+      map[u.id] = u.username || 'Usuario sin nombre';
+    });
+    return map;
+  }, [keycloakUsersReal]);
 
    // Controlador oficial para ejecutar el POST /tasks/{id}/assign (RF-05, RN-07)
   const handleAssignSubmit = async (e: React.FormEvent) => {
@@ -218,6 +250,12 @@ export const TasksDashboard = () => {
                   <th style={{ padding: '1rem' }}>Estado</th>
                   <th style={{ padding: '1rem' }}>Prioridad</th>
                   <th style={{ padding: '1rem' }}>Fecha</th>
+                  {user?.role === 'ADMIN' && (
+                    <>
+                      <th style={{ padding: '1rem' }}>Creado Por</th>
+                      <th style={{ padding: '1rem' }}>Asignado A</th>
+                    </>
+                  )}
                   {/* 🌟 NUEVA COLUMNA DE CONTROL */}
                   <th style={{ padding: '1rem' }}>Acciones</th>
                 </tr>
@@ -225,11 +263,13 @@ export const TasksDashboard = () => {
               <tbody>
                 {data?.data && data.data.length > 0 ? (
                   data.data.map((task: any) => (
-                    <tr 
-                      key={task.id} 
-                      style={{ borderBottom: '1px solid #f1f5f9', background: selectedTaskId === task.id ? '#eff6ff' : 'transparent' }}
-                    >
+                      <tr 
+                        key={task.id} 
+                        style={{ borderBottom: '1px solid #f1f5f9', background: selectedTaskId === task.id ? '#eff6ff' : 'transparent' }}
+                      >
+                      {/* Titulo Tarea */}
                       <td style={{ padding: '1rem', fontWeight: '500' }}>{task.title}</td>
+                      {/* Estado Tarea */}
                       <td style={{ padding: '1rem' }}>
                         <span style={{ 
                           padding: '0.2rem 0.5rem', 
@@ -240,13 +280,40 @@ export const TasksDashboard = () => {
                           background: task.status === 'COMPLETED' ? '#dcfce7' : task.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9', 
                           color: task.status === 'COMPLETED' ? '#15803d' : task.status === 'IN_PROGRESS' ? '#1d4ed8' : '#475569' 
                         }}>
-                          {/* 🌟 Muestra el texto amable traducido (ej: "En progreso", "Creado") */}
-                          {STATUS_LABELS[task.status] || task.status}
+                          {/* Muestra el texto amable traducido (ej: "En progreso", "Creado") */}
+                          {STATUS_LABELS[task.status] || task.status} 
                         </span>
                       </td>
-                      <td style={{ padding: '1rem' }}>{task.priority}</td>
-                      <td style={{ padding: '1rem', color: '#64748b' }}>{formatGlobalDate(task.createdAt)}</td>
-                      
+                      {/*  Prioridad Tarea */}
+                      <td style={{ padding: '1rem' }}>
+                        <span style={{ 
+                          padding: '0.2rem 0.6rem', 
+                          borderRadius: '12px', 
+                          fontSize: '0.75rem', 
+                          fontWeight: 'bold', 
+                          display: 'inline-block',
+                          // 🎨 Colores dinámicos extraídos directamente del diccionario de estilos
+                          background: PRIORITY_STYLES[task.priority]?.bg || '#f1f5f9', 
+                          color: PRIORITY_STYLES[task.priority]?.color || '#475569' 
+                        }}>
+                          {/* Muestra el texto amable traducido (ej: "Crítica", "Baja") */}
+                          {PRIORITY_LABELS[task.priority] || task.priority} 
+                        </span>
+                      </td>
+                      {/* Dato Fecha Creación  */}
+                      <td style={{ padding: '1rem', color: '#64748b' }}>{formatGlobalDate(task.createdAt)}</td> 
+                      {/* Datos usuario de creación y usuario asignado  */}
+                      {user?.role === 'ADMIN' && (
+                        <>
+                        <td style={{ padding: '1rem' }}>
+                          {usersMap[task.createdByUserId] || task.createdByUserId}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          {usersMap[task.assignedUserId] || task.assignedUserId}
+                        </td>
+                        </>
+                      )}
+
                       {/* 🌟 INYECCIÓN DE BOTONES EXCLUSIVOS DE ADMINISTRADOR */}
                       <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
                         <button 
@@ -320,7 +387,7 @@ export const TasksDashboard = () => {
       </main>
 
       {/* MODAL CENTRAL FLOTANTE DE GESTIÓN Y EDICIÓN COMPLETA */}
-       {/* 🌟 MODAL CENTRAL FLOTANTE DE GESTIÓN Y EDICIÓN (REPARADO) */}
+      {/* 🌟 MODAL CENTRAL FLOTANTE DE GESTIÓN Y EDICIÓN (REPARADO) */}
       {isEditOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(2px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100 }}>
 
@@ -376,108 +443,6 @@ export const TasksDashboard = () => {
                 </div>
               </div>
 
-              {/* LÓGICA DE COMENTARIOS HISTORIAL CONDICIONADA AL DTO DEL BACKEND */}
-              {taskDetail && (
-                <>
-                  {/* 🚀 CONTROLES COMPLETOS DEL FLUJO DE TRABAJO (RF-06 a RF-09) */}
-              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.5rem' }}>
-                  Controles del Ciclo de Vida (Reglas de Transición RN)
-                </span>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  
-                  {/* RN-10: Iniciar Tarea -> Solo si está ASSIGNED */}
-                  {taskDetail && (taskDetail as any).data?.status === 'ASSIGNED' && (
-                    <button 
-                      type="button" 
-                      disabled={actions.isSubmitting}
-                      onClick={async () => {
-                        try {
-                          await actions.startTask(selectedTaskId!);
-                          setIsEditOpen(false);
-                          setSelectedTaskId(null);
-                        } catch { alert('Error al iniciar.'); }
-                      }} 
-                      style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
-                    >
-                      🚀 Iniciar Tarea (IN_PROGRESS)
-                    </button>
-                  )}
-                  
-                  {/* RN-11: Detener Tarea -> Solo si está IN_PROGRESS */}
-                  {taskDetail && (taskDetail as any).data?.status === 'IN_PROGRESS' && (
-                    <button 
-                      type="button" 
-                      disabled={actions.isSubmitting}
-                      onClick={async () => {
-                        try {
-                          await actions.stopTask(selectedTaskId!);
-                          setIsEditOpen(false);
-                          setSelectedTaskId(null);
-                        } catch { alert('Error al detener.'); }
-                      }} 
-                      style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
-                    >
-                      ⏸ Detener Trabajo (STOPPED)
-                    </button>
-                  )}
-
-                  {/* 🌟 RN-12: Reanudar Tarea -> Solo si está STOPPED */}
-                  {taskDetail && (taskDetail as any).data?.status === 'STOPPED' && (
-                    <button 
-                      type="button" 
-                      disabled={actions.isSubmitting}
-                      onClick={async () => {
-                        try {
-                          // Gatilla el POST /tasks/{id}/resume oficial de tu API
-                          await actions.resumeTask(selectedTaskId!);
-                          setIsEditOpen(false);
-                          setSelectedTaskId(null);
-                        } catch { alert('Error al reanudar.'); }
-                      }} 
-                      style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
-                    >
-                      ▶ Reanudar Tarea (IN_PROGRESS)
-                    </button>
-                  )}
-
-                  {/* 🌟 RN-13: Completar Tarea -> Solo si está IN_PROGRESS */}
-                  {taskDetail && (taskDetail as any).data?.status === 'IN_PROGRESS' && (
-                    <button 
-                      type="button" 
-                      disabled={actions.isSubmitting}
-                      onClick={async () => {
-                        try {
-                          // Gatilla el POST /tasks/{id}/complete oficial de tu API
-                          await actions.completeTask(selectedTaskId!);
-                          setIsEditOpen(false);
-                          setSelectedTaskId(null);
-                        } catch { alert('Error al completar.'); }
-                      }} 
-                      style={{ background: '#16a34a', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
-                    >
-                      ✔ Finalizar Tarea (COMPLETED)
-                    </button>
-                  )}
-
-                </div>
-              </div>
-
-                  {/* COMENTARIOS */}
-                  {/*  
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Comentarios.</span>
-                    {rules.canComment((taskDetail as any).data || taskDetail, user) && (
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Escribe un comentario..." style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
-                        <button type="button" onClick={handleCommentSubmit} style={{ background: '#0284c7', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>OK</button>
-                      </div>
-                    )}
-                  </div>
-                  */}
-                </>
-              )}
-
               {/* BOTONES FINALES */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
                 <button type="button" onClick={() => { setIsEditOpen(false); setSelectedTaskId(null); }} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer' }}>Cerrar</button>
@@ -494,6 +459,98 @@ export const TasksDashboard = () => {
                 )}
 
               </div>
+
+              {/* BOTONES DE ESTADO  */}    
+              {/* LÓGICA DE COMENTARIOS HISTORIAL CONDICIONADA AL DTO DEL BACKEND */}
+              {taskDetail && (
+                <>
+                  {/* 🚀 CONTROLES COMPLETOS DEL FLUJO DE TRABAJO (RF-06 a RF-09) */}
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.5rem' }}>
+                      Controles del Ciclo de Vida (Reglas de Transición RN)
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      
+                      {/* RN-10: Iniciar Tarea -> Solo si está ASSIGNED */}
+                      {taskDetail && (taskDetail as any).data?.status === 'ASSIGNED' && (
+                        <button 
+                          type="button" 
+                          disabled={actions.isSubmitting}
+                          onClick={async () => {
+                            try {
+                              await actions.startTask(selectedTaskId!);
+                              setIsEditOpen(false);
+                              setSelectedTaskId(null);
+                            } catch { alert('Error al iniciar.'); }
+                          }} 
+                          style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+                        >
+                          🚀 Iniciar Tarea (IN_PROGRESS)
+                        </button>
+                      )}
+                      
+                      {/* RN-11: Detener Tarea -> Solo si está IN_PROGRESS */}
+                      {taskDetail && (taskDetail as any).data?.status === 'IN_PROGRESS' && (
+                        <button 
+                          type="button" 
+                          disabled={actions.isSubmitting}
+                          onClick={async () => {
+                            try {
+                              await actions.stopTask(selectedTaskId!);
+                              setIsEditOpen(false);
+                              setSelectedTaskId(null);
+                            } catch { alert('Error al detener.'); }
+                          }} 
+                          style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+                        >
+                          ⏸ Detener Trabajo (STOPPED)
+                        </button>
+                      )}
+
+                      {/* 🌟 RN-12: Reanudar Tarea -> Solo si está STOPPED */}
+                      {taskDetail && (taskDetail as any).data?.status === 'STOPPED' && (
+                        <button 
+                          type="button" 
+                          disabled={actions.isSubmitting}
+                          onClick={async () => {
+                            try {
+                              // Gatilla el POST /tasks/{id}/resume oficial de tu API
+                              await actions.resumeTask(selectedTaskId!);
+                              setIsEditOpen(false);
+                              setSelectedTaskId(null);
+                            } catch { alert('Error al reanudar.'); }
+                          }} 
+                          style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+                        >
+                          ▶ Reanudar Tarea (IN_PROGRESS)
+                        </button>
+                      )}
+
+                      {/* 🌟 RN-13: Completar Tarea -> Solo si está IN_PROGRESS */}
+                      {taskDetail && (taskDetail as any).data?.status === 'IN_PROGRESS' && (
+                        <button 
+                          type="button" 
+                          disabled={actions.isSubmitting}
+                          onClick={async () => {
+                            try {
+                              // Gatilla el POST /tasks/{id}/complete oficial de tu API
+                              await actions.completeTask(selectedTaskId!);
+                              setIsEditOpen(false);
+                              setSelectedTaskId(null);
+                            } catch { alert('Error al completar.'); }
+                          }} 
+                          style={{ background: '#16a34a', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+                        >
+                          ✔ Finalizar Tarea (COMPLETED)
+                        </button>
+                      )}
+
+                    </div>
+                  </div>
+                  {/* COMENTARIOS pendiente */}
+                </>
+              )}
+
             </form>
           </div>
           
@@ -526,11 +583,16 @@ export const TasksDashboard = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '0.2rem' }}>Prioridad</label>
-                  <select value={form.priority} onChange={(e) => setForm((prev) => ({ ...prev, priority: e.target.value as any }))} style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.9rem' }}>
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="CRITICAL">CRITICAL</option>
+                  <select 
+                    value={form.priority} 
+                    onChange={(e) => setForm((prev) => ({ ...prev, priority: e.target.value as any }))} 
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.9rem' }}
+                  >
+                    {(Object.keys(PRIORITY_LABELS) as TaskPriority[]).map((key) => (
+                      <option key={key} value={key}>
+                        {PRIORITY_LABELS[key]}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
