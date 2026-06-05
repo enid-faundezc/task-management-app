@@ -286,19 +286,18 @@ export const TasksDashboard = () => {
                       </td>
                       {/*  Prioridad Tarea */}
                       <td style={{ padding: '1rem' }}>
-                        <span style={{ 
-                          padding: '0.2rem 0.6rem', 
-                          borderRadius: '12px', 
-                          fontSize: '0.75rem', 
-                          fontWeight: 'bold', 
-                          display: 'inline-block',
-                          // 🎨 Colores dinámicos extraídos directamente del diccionario de estilos
-                          background: PRIORITY_STYLES[task.priority]?.bg || '#f1f5f9', 
-                          color: PRIORITY_STYLES[task.priority]?.color || '#475569' 
-                        }}>
-                          {/* Muestra el texto amable traducido (ej: "Crítica", "Baja") */}
-                          {PRIORITY_LABELS[task.priority] || task.priority} 
-                        </span>
+                      <span style={{ 
+                        padding: '0.2rem 0.6rem', 
+                        borderRadius: '12px', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold', 
+                        display: 'inline-block',
+                        // 💡 Se añade "as TaskPriority" en cada acceso
+                        background: PRIORITY_STYLES[task.priority as TaskPriority]?.bg || '#f1f5f9', 
+                        color: PRIORITY_STYLES[task.priority as TaskPriority]?.color || '#475569' 
+                      }}>
+                        {PRIORITY_LABELS[task.priority as TaskPriority] || task.priority} 
+                      </span>
                       </td>
                       {/* Dato Fecha Creación  */}
                       <td style={{ padding: '1rem', color: '#64748b' }}>{formatGlobalDate(task.createdAt)}</td> 
