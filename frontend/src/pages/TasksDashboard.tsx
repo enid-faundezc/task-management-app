@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../store/auth.store';
 //EFC: Se llama al hook para llamar al endpoint
 import { useTasks, useTaskDetail, useTaskActions, useKeycloakUsers, useTaskHistory  } from '../features/tasks/hooks'; 
@@ -10,7 +10,7 @@ import { formatGlobalDate } from '../utils/date'; // EFC: Para formatear fechas
 const STATUS_LABELS: Record<string, string> = {
   CREATED: 'Creado',
   ASSIGNED: 'Asignado',
-  IN_PROGRESS: 'En progreso', // 🚀 Texto amable solicitado
+  IN_PROGRESS: 'En progreso', 
   STOPPED: 'Detenido',
   COMPLETED: 'Completado'
 };
@@ -27,7 +27,7 @@ export const TasksDashboard = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [newComment, setNewComment] = useState('');
+  // const [newComment, setNewComment] = useState(''); // EFC: Se eliminan momentáneamente
   const [editForm, setEditForm] = useState<{
     title: string;
     description: string;
@@ -74,7 +74,7 @@ export const TasksDashboard = () => {
     try {
       // Gatillamos el hook que ejecuta el POST con la estructura exacta: { userId }
       await actions.assignTask({ id: selectedTaskId, userId: selectedAssigneeId });
-      alert('Tarea asignada exitosamente. El estado ha cambiado a ASSIGNED.');
+      // alert('Tarea asignada exitosamente. El estado ha cambiado a ASSIGNED.');
       setIsAssignOpen(false);
       setSelectedTaskId(null);
       setSelectedAssigneeId('');
@@ -93,7 +93,12 @@ export const TasksDashboard = () => {
   if (!user) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando sesión...</div>;
 
   const handleFilterChange = (key: keyof TaskFilters, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      // 🌟 Si cambias la página, mantén el valor. Si cambias otro filtro, vuelve a la 1.
+      page: key === 'page' ? (value as number) : 1
+    }));
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -149,14 +154,15 @@ export const TasksDashboard = () => {
     }
   };
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || !selectedTaskId) return;
-    try {
-      await actions.addComment({ id: selectedTaskId, comment: newComment.trim() });
-      setNewComment('');
-    } catch { alert('Error comentario.'); }
-  };
+  // EFC: No se utilizará en la versión 1.0
+  // const handleCommentSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!newComment.trim() || !selectedTaskId) return;
+  //   try {
+  //     await actions.addComment({ id: selectedTaskId, comment: newComment.trim() });
+  //     setNewComment('');
+  //   } catch { alert('Error comentario.'); }
+  // };
 
   return (
     <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', background: '#f8fafc', paddingBottom: '2rem' }}>
@@ -174,7 +180,15 @@ export const TasksDashboard = () => {
         <section>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0 }}>Listado de Tareas</h2>
-            <button onClick={() => setIsCreateOpen(true)} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>+ Crear</button>
+            {/* ADMIN no puede crear tareas */}
+            {user?.role !== 'ADMIN' && (
+              <button 
+                onClick={() => setIsCreateOpen(true)} 
+                style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                + Crear
+              </button>
+            )}
           </div>
 
           {/* Barra Filtros rápidos (RF-03) */}
@@ -205,7 +219,7 @@ export const TasksDashboard = () => {
                   <th style={{ padding: '1rem' }}>Prioridad</th>
                   <th style={{ padding: '1rem' }}>Fecha</th>
                   {/* 🌟 NUEVA COLUMNA DE CONTROL */}
-                  <th style={{ padding: '1rem', textBehavior: 'center' }}>Acciones</th>
+                  <th style={{ padding: '1rem' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>

@@ -9,6 +9,7 @@
 	- VER:
 		tareas que creó
 		tareas asignadas a él
+		ya no puede ver las que creó pero se asignaron a otro usuario.
 	-	MODIFICAR:
 		solo tareas que creó (no asignadas por otros)
 	-	ACCIONES:
@@ -21,6 +22,7 @@
 	- asignar/reasignar
 	- cambiar prioridad
 	- ver historial completo
+	- No puede crear tareas (Esta característica podría ser diferente, la dejé así a modo del ejercicio)
 
 ## Matriz de permisos:
 	Acción								USER	ADMIN

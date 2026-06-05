@@ -12,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - red-compartida # EFC: Red compartida entre los dos compose, cada uno crea su red propia.
 
 # EFC: Configuración de Keycloak para la gestión de autenticación y autorización
   keycloak:
@@ -23,6 +25,12 @@ services:
         KEYCLOAK_ADMIN_PASSWORD: admin
       ports:
         - "9090:9090"
+      networks:
+        - red-compartida # EFC Clave: Se une a la red que creará este compose
 
 volumes:
   postgres_data:
+
+networks:
+  red-compartida:
+    name: red-global  # EFC:  Docker creará la red con este nombre exacto

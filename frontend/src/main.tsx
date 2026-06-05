@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Keycloak from 'keycloak-js';
 import { useAuthStore } from './store/auth.store';
 import { TasksDashboard } from './pages/TasksDashboard';
+import { Toaster } from 'sonner'; // EFC: Para toast
 
 // Cliente de TanStack Query para la gestión del estado del servidor
 const queryClient = new QueryClient({
@@ -50,7 +51,10 @@ keycloak
       );
 
       useAuthStore.getState().setLogoutCallback(() => {
-        keycloak.logout({ redirectUri: 'http://localhost:5173' }); 
+        keycloak.logout({ 
+          // 🌟 Lee el origen dinámicamente desde la URL del navegador o del .env
+          redirectUri: window.location.origin 
+        }); 
       });
 
       // Renovación automática: Si el token va a expirar en los próximos 30s, se refresca de forma transparente
@@ -66,6 +70,7 @@ keycloak
       ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>
           <QueryClientProvider client={queryClient}>
+            <Toaster richColors position="top-right" />  
             <TasksDashboard />
           </QueryClientProvider>
         </React.StrictMode>

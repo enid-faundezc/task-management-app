@@ -44,7 +44,9 @@ export class Task {
 
   // EFC: Obtener el historial de eventos de la tarea
   getHistory(): ReadonlyArray<TaskHistory> {
-    return this.history;
+    return [...this.history].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
   }
 
   // EFC: Método para obtener solo los eventos pendientes de persistencia

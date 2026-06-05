@@ -142,12 +142,26 @@ export class PrismaTaskRepository extends TaskRepository {
     const size = filters.size ?? 10;
 
     const baseWhere = this.buildWhere(filters);
-
     const where = {
       AND: [
         baseWhere,
         {
-          OR: [{ createdByUserId: userId }, { assignedUserId: userId }],
+          OR: [
+            // Caso 1: El usuario es el asignado
+            { assignedUserId: userId },
+            // Caso 2: El usuario la creó, y está asignada a él O no tiene asignado a nadie
+            {
+              AND: [
+                { createdByUserId: userId },
+                {
+                  OR: [
+                    { assignedUserId: userId },
+                    { assignedUserId: null }, // Permite verla si no tiene asignado
+                  ],
+                },
+              ],
+            },
+          ],
         },
       ],
     };

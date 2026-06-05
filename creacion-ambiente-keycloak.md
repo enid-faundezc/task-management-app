@@ -40,8 +40,10 @@ $bodyCliente = @{
     publicClient              = $true           # Permite el flujo en apps públicas (React)
     standardFlowEnabled       = $true           # Activa el flujo estándar OIDC de redirección
     directAccessGrantsEnabled = $true 
-    redirectUris              = @("http://localhost:5173/*") # 🔐 Soluciona el error 'Invalid parameter: redirect_uri'
-    webOrigins                = @("http://localhost:5173")   # 🌐 Soluciona futuros errores de CORS en local
+    # 🔐 Registra ambas direcciones para solucionar el error 'Invalid parameter: redirect_uri'
+    redirectUris              = @("http://localhost:5173/*", "http://localhost/*") 
+    # 🌐 Registra ambos orígenes para evitar bloqueos de CORS
+    webOrigins                = @("http://localhost:5173", "http://localhost") 
 } | ConvertTo-Json -Depth 5
 
 Invoke-RestMethod -Uri "http://localhost:9090/admin/realms/TaskManagement/clients" `
@@ -305,7 +307,7 @@ $clientTMId = $clientTM[0].id
 $bodyAdminCliTM = @{
     id = $clientTMId
     clientId = "admin-cli"
-    webOrigins = @("http://localhost:5173") 
+    webOrigins = @("http://localhost:5173", "http://localhost") 
 } | ConvertTo-Json
 
 # 3. Aplicar los cambios en el realm de tu negocio

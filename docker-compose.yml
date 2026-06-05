@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      # 🌟 Apunta al contenedor exacto de tu Base de Datos de Infraestructura
+      - DATABASE_URL=postgresql://taskuser:taskpassword@postgres-task-db:5432/taskdb?schema=public
+      - KEYCLOAK_REALM=TaskManagement
+      # 🌟 El backend habla de forma interna con Keycloak usando su nombre de contenedor
+      - KEYCLOAK_URL=http://keycloak-task:9090
+      - KEYCLOAK_CLIENT_ID=task-frontend
+      - FRONTEND_URL=http://localhost
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_FRONTEND_URL=http://localhost
+        - VITE_API_URL=http://localhost:3000
+        # 🌟 El navegador del usuario final sigue necesitando apuntar a la IP pública/localhost
+        - VITE_KEYCLOAK_URL=http://localhost:9090
+    container_name: task_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: red-global
+    external: true

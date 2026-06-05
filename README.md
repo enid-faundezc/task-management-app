@@ -71,6 +71,14 @@ npm run dev
 10. Revisar: http://localhost:5173.
 
 11. Usuarios:
-    Usuario Rol Usuario: user1user  Password123!
-    Usuario Rol Usuario: user2user  Password123!
-    Usuario Rol Admin:   user1admin Password123!
+   - Usuario Rol Usuario: user1user  Password123!
+   - Usuario Rol Usuario: user2user  Password123!
+   - Usuario Rol Admin:   user1admin Password123!
+
+12. Levantar app pero en Docker, desde la raíz: "task-management-app"
+
+```bash
+# Terminal Shell
+docker compose up --build -d
+docker ps # Revisar servicios.
+```

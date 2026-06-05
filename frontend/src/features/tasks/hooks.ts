@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './api';
 import { type TaskFilters } from './types';
+import { toast } from 'sonner';
 
 // Hook reactivo para el listado principal con filtros (RF-02, RF-03)
 export const useTasks = (filters: TaskFilters) => {
@@ -34,24 +35,56 @@ export const useTaskHistory = (id: string | null) => {
 export const useTaskActions = () => {
   const queryClient = useQueryClient();
 
-  const invalidateQueries = () => {
+  // EFC: Incluyo toast
+  const handleSuccess = (message: string) => {
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
     queryClient.invalidateQueries({ queryKey: ['task'] });
+    toast.success(message); //EFC Levanta el toast global
   };
 
-  const createMut = useMutation({ mutationFn: api.createTask, onSuccess: invalidateQueries });
-  const assignMut = useMutation({ mutationFn: ({ id, userId }: { id: string; userId: string }) => api.assignTask(id, userId), onSuccess: invalidateQueries });
-  const startMut = useMutation({ mutationFn: api.startTask, onSuccess: invalidateQueries });
-  const stopMut = useMutation({ mutationFn: api.stopTask, onSuccess: invalidateQueries });
-  const resumeMut = useMutation({ mutationFn: api.resumeTask, onSuccess: invalidateQueries });
-  const completeMut = useMutation({ mutationFn: api.completeTask, onSuccess: invalidateQueries });
-  const priorityMut = useMutation({ mutationFn: ({ id, priority }: { id: string; priority: string }) => api.changeTaskPriority(id, priority), onSuccess: invalidateQueries });
-  const commentMut = useMutation({ mutationFn: ({ id, comment }: { id: string; comment: string }) => api.addTaskComment(id, comment), onSuccess: invalidateQueries });
+  const createMut = useMutation({ 
+    mutationFn: api.createTask, 
+    onSuccess: () => handleSuccess('Tarea creada con éxito') 
+  });
   
-  // 🌟 NUEVA MUTACIÓN: Conecta la edición general con TanStack Query
+  const assignMut = useMutation({ 
+    mutationFn: ({ id, userId }: { id: string; userId: string }) => api.assignTask(id, userId), 
+    onSuccess: () => handleSuccess('Usuario asignado correctamente') 
+  });
+  
+  const startMut = useMutation({ 
+    mutationFn: api.startTask, 
+    onSuccess: () => handleSuccess('Tarea iniciada') 
+  });
+  
+  const stopMut = useMutation({ 
+    mutationFn: api.stopTask, 
+    onSuccess: () => handleSuccess('Tarea pausada') 
+  });
+  
+  const resumeMut = useMutation({ 
+    mutationFn: api.resumeTask, 
+    onSuccess: () => handleSuccess('Tarea reanudada') 
+  });
+  
+  const completeMut = useMutation({ 
+    mutationFn: api.completeTask, 
+    onSuccess: () => handleSuccess('Tarea completada exitosamente 🎉') 
+  });
+  
+  const priorityMut = useMutation({ 
+    mutationFn: ({ id, priority }: { id: string; priority: string }) => api.changeTaskPriority(id, priority), 
+    onSuccess: () => handleSuccess('Prioridad actualizada') 
+  });
+  
+  const commentMut = useMutation({ 
+    mutationFn: ({ id, comment }: { id: string; comment: string }) => api.addTaskComment(id, comment), 
+    onSuccess: () => handleSuccess('Comentario agregado') 
+  });
+  
   const updateGeneralMut = useMutation({ 
     mutationFn: ({ id, payload }: { id: string; payload: any }) => api.updateTaskGeneral(id, payload), 
-    onSuccess: invalidateQueries 
+    onSuccess: () => handleSuccess('Información de la tarea actualizada') 
   });
 
   return {
